@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.12 2005/02/19 00:17:54 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.13 2005/02/22 22:01:21 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -126,6 +126,48 @@ static void save_and_close(GtkWidget *w, gpointer data)
 	gtk_widget_destroy(configure_win);
 }
 
+static char *escape_shell_chars(char *string)
+{
+	const gchar *special = "$`\"\\"; /* chars to escape */
+	char *in = string, *out;
+	char *escaped;
+	int num = 0;
+
+	while (*in != '\0')
+		if (strchr(special, *in++))
+			num++;
+
+	escaped = g_malloc(strlen(string) + num + 1);
+
+	in = string;
+	out = escaped;
+	
+	while (*in != '\0')
+	{
+		if (strchr(special, *in))
+			*out++ = '\\';
+		*out++ = *in++;
+	}
+	*out = '\0';
+
+	return escaped;
+}
+
+static void associate(Formatter *formatter, char letter, char *data)
+{
+	char *tmp;
+	if (data == NULL)
+	{
+		xmms_formatter_associate(formatter, letter, "");
+	}
+	else
+	{
+		tmp = escape_shell_chars(data);
+		xmms_formatter_associate(formatter, letter, tmp);
+		g_free(tmp);
+	}
+}
+
 static void *worker_func(void *data)
 {
 	int otime;
@@ -138,6 +180,8 @@ static void *worker_func(void *data)
 	int docmd;
 	metatag_t *meta;
 	char *fname;
+	Formatter *formatter;
+	char *cmdstring = NULL;
 
 	otime = xmms_remote_get_output_time(sessid);
 
@@ -187,14 +231,21 @@ static void *worker_func(void *data)
 				fname = xmms_remote_get_playlist_file(sessid, pos);
 				meta = metatag_new();
 				get_tag_data(meta, fname, 0);
-				if (meta->artist != NULL)
-				{
-					fprintf(stderr, "Would run the command now, for artist '%s' at second %d, pos %d\n", meta->artist, (otime/1000), pos);
-				}
-				else
-				{
-					fprintf(stderr, "Null artist for filename '%s' at second %d, pos %d\n", fname, (otime/1000), pos);
-				}
+
+				/* Get our commandline */
+				formatter = xmms_formatter_new();
+				associate(formatter, 'a', meta->artist);
+				associate(formatter, 't', meta->title);
+				associate(formatter, 'l', meta->album);
+				associate(formatter, 'y', meta->year);
+				associate(formatter, 'g', meta->genre);
+				associate(formatter, 'n', meta->track);
+				associate(formatter, 's', g_strdup_printf("%d", len/1000));
+				cmdstring = xmms_formatter_format(formatter, cmd_line);
+
+				/* Run the command */
+				fprintf(stderr, "Would run '%s' now second %d, pos %d\n", cmdstring, (otime/1000), pos);
+				g_free(cmdstring);
 			}
 			else
 			{

@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.21 2005/02/25 04:02:45 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.22 2005/02/25 15:29:49 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -306,12 +306,36 @@ static void configure_ok_cb(GtkWidget *w, gpointer data)
 	save_and_close(NULL, NULL);
 }
 
+static GtkWidget *labelbox_int(GtkWidget *container_box, gchar *text, gint data, GtkWidget *entrybox)
+{
+	GtkWidget *myhbox;
+	GtkWidget *mylabel;
+	gchar *temp;
+
+	/* Label */
+	myhbox = gtk_hbox_new(FALSE, 5);
+	gtk_box_pack_start(GTK_BOX(container_box), myhbox, FALSE, FALSE, 0);
+	mylabel = gtk_label_new(text);
+	gtk_box_pack_start(GTK_BOX(myhbox), mylabel, FALSE, FALSE, 0);
+
+	/* Entry box */
+	entrybox = gtk_entry_new();
+	if (percent_done)
+	{
+		temp = g_strdup_printf("%d", data);
+		gtk_entry_set_text(GTK_ENTRY(entrybox), temp);
+		g_free(temp);
+	}
+	gtk_widget_set_usize(entrybox, 200, -1);
+	gtk_box_pack_start(GTK_BOX(myhbox), entrybox, FALSE, FALSE, 0);
+
+	/* Return the new entrybox */
+	return entrybox;
+}
+
 static void configure(void)
 {
 	GtkWidget *condition_frame, *condition_vbox, *condition_desc;
-	GtkWidget *percent_hbox, *percent_label;
-	GtkWidget *seconds_hbox, *seconds_label;
-	GtkWidget *minimum_hbox, *minimum_label;
 	GtkWidget *cmd_hbox, *cmd_label, *cmd_frame, *cmd_vbox, *cmd_desc;
 	GtkWidget *configure_bbox, *configure_ok, *configure_cancel;
 	gchar *temp;
@@ -359,56 +383,10 @@ static void configure(void)
 	gtk_box_pack_start(GTK_BOX(condition_vbox), condition_desc, TRUE, TRUE, 0);
 	gtk_label_set_line_wrap(GTK_LABEL(condition_desc), TRUE);
 
-	/* Label for Percent Done */
-	percent_hbox = gtk_hbox_new(FALSE, 5);
-	gtk_box_pack_start(GTK_BOX(condition_vbox), percent_hbox, FALSE, FALSE, 0);
-	percent_label = gtk_label_new("Percent Done:");
-	gtk_box_pack_start(GTK_BOX(percent_hbox), percent_label, FALSE, FALSE, 0);
-
-	/* Entry box for Percent Done */
-	percent_entry = gtk_entry_new();
-	if (percent_done)
-	{
-		temp = g_strdup_printf("%d", percent_done);
-		gtk_entry_set_text(GTK_ENTRY(percent_entry), temp);
-		g_free(temp);
-	}
-	gtk_widget_set_usize(percent_entry, 200, -1);
-	gtk_box_pack_start(GTK_BOX(percent_hbox), percent_entry, TRUE, TRUE, 0);
-
-	/* Label for Seconds Past */
-	seconds_hbox = gtk_hbox_new(FALSE, 5);
-	gtk_box_pack_start(GTK_BOX(condition_vbox), seconds_hbox, FALSE, FALSE, 0);
-	seconds_label = gtk_label_new("Seconds Past:");
-	gtk_box_pack_start(GTK_BOX(seconds_hbox), seconds_label, FALSE, FALSE, 0);
-
-	/* Entry box for Seconds Past */
-	seconds_entry = gtk_entry_new();
-	if (seconds_past)
-	{
-		temp = g_strdup_printf("%d", seconds_past);
-		gtk_entry_set_text(GTK_ENTRY(seconds_entry), temp);
-		g_free(temp);
-	}
-	gtk_widget_set_usize(seconds_entry, 200, -1);
-	gtk_box_pack_start(GTK_BOX(seconds_hbox), seconds_entry, TRUE, TRUE, 0);
-
-	/* Label for Minimum Length */
-	minimum_hbox = gtk_hbox_new(FALSE, 5);
-	gtk_box_pack_start(GTK_BOX(condition_vbox), minimum_hbox, FALSE, FALSE, 0);
-	minimum_label = gtk_label_new("Minimum Length:");
-	gtk_box_pack_start(GTK_BOX(minimum_hbox), minimum_label, FALSE, FALSE, 0);
-
-	/* Entry box for Minimum Length */
-	minimum_entry = gtk_entry_new();
-	if (minimum_len)
-	{
-		temp = g_strdup_printf("%d", minimum_len);
-		gtk_entry_set_text(GTK_ENTRY(minimum_entry), temp);
-		g_free(temp);
-	}
-	gtk_widget_set_usize(minimum_entry, 200, -1);
-	gtk_box_pack_start(GTK_BOX(minimum_hbox), minimum_entry, TRUE, TRUE, 0);
+	/* Various Label Boxes */
+	percent_entry = labelbox_int(condition_vbox, "Percent Done:", percent_done, percent_entry);
+	seconds_entry = labelbox_int(condition_vbox, "Seconds Past:", seconds_past, seconds_entry);
+	minimum_entry = labelbox_int(condition_vbox, "Minimum Length:", minimum_len, minimum_entry);
 
 	/* Description for Command */
 	temp = g_strdup_printf("Run this command.");

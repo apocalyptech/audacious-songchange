@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.8 2005/02/18 06:40:21 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.9 2005/02/18 21:48:31 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 /* Some More Includes */
 #include <sys/types.h>
@@ -25,6 +26,8 @@
 
 /* Other defines */
 #define CFGCAT "xmms_tracking"
+#define DEFAULT_PERCENT 50
+#define DEFAULT_SECONDS 240
 
 /* Hooks */
 static void init(void);
@@ -35,8 +38,8 @@ static void configure(void);
 static void read_config(void);
 
 /* Our Config Vars */
-static gint percent_done;
-static gint seconds_past;
+static gint percent_done = -1;
+static gint seconds_past = -1;
 static gchar *cmd_line = NULL;
 
 /* Keep track of the configure window */
@@ -47,6 +50,13 @@ static GtkWidget *configure_vbox = NULL;
 static GtkWidget *percent_entry;
 static GtkWidget *seconds_entry;
 static GtkWidget *cmd_entry;
+
+/* Our thread prototype and handle */
+static void * worker_func(void *);
+static pthread_t pt_worker;
+
+/* Control variable for thread */
+static int going;
 
 static GeneralPlugin xmms_tracking =
 {
@@ -69,13 +79,29 @@ GeneralPlugin *get_gplugin_info(void)
 static void init(void)
 {
 	read_config();
+	going = 1;
 
 	fprintf(stderr, "Plugin init\n");
+	if (pthread_create(&pt_worker, NULL, worker_func, NULL))
+	{
+		return;
+	}
 }
 
 static void cleanup(void)
 {
 	fprintf(stderr, "In cleanup\n");
+	void *dummy;
+
+	if (cmd_line)
+		g_free(cmd_line);
+	cmd_line = NULL;
+
+	if (going)
+	{
+		going = 0;
+		pthread_join(pt_worker, &dummy);
+	}
 }
 
 static void save_and_close(GtkWidget *w, gpointer data)
@@ -97,6 +123,62 @@ static void save_and_close(GtkWidget *w, gpointer data)
 	xmms_cfg_free(cfgfile);
 
 	gtk_widget_destroy(configure_win);
+}
+
+static void *worker_func(void *data)
+{
+	int otime;
+	int playing;
+	int run = 1;
+	int sessid = xmms_tracking.xmms_session;
+	int prevpos = -1, prevlen = -1;
+	int pos, len;
+	int oldtime = 0;
+	int docmd;
+
+	otime = xmms_remote_get_output_time(sessid);
+
+	while (run)
+	{
+		/* Are we playing right now? */
+		playing = xmms_remote_is_playing(sessid);
+		if (!playing)
+		{
+			prevpos = -1;
+			prevlen = -1;
+		}
+
+		/* Grab information about the current track */
+		pos = xmms_remote_get_playlist_pos(sessid);
+		len = xmms_remote_get_playlist_time(sessid, pos);
+
+		/* Figure out how much time has past */
+		if (otime == -1)
+			otime = xmms_remote_get_output_time(sessid);
+		oldtime = otime;
+		otime = xmms_remote_get_output_time(sessid);
+
+		/* Are we supposed to run the command yet? */
+		docmd = (otime/1000 > seconds_past) ||
+			(((double)otime/((double)len + 1) * 100) >= percent_done);
+
+		/* Sanity check - has the user skipped in the track? */
+		if (otime - oldtime > 5000 && (prevpos != pos && prevlen != len && playing))
+		{
+			fprintf(stderr, "No skipping allowed, discarding song.\n");
+			prevpos = pos;
+			prevlen = len;
+		}
+		
+		/* Run the command */
+		if ((pos != prevpos && len != prevlen) && playing && docmd)
+		{
+			fprintf(stderr, "Would run the command now, at second %d, pos %d\n", (otime/1000), pos);
+		}
+		run = going;
+		usleep(100000);
+	}
+	pthread_exit(NULL);
 }
 
 static void configure_ok_cb(GtkWidget *w, gpointer data)
@@ -256,5 +338,15 @@ static void read_config(void)
 		xmms_cfg_read_int(cfgfile, CFGCAT, "seconds_past", &seconds_past);
 		xmms_cfg_read_string(cfgfile, CFGCAT, "cmd_line", &cmd_line);
 		xmms_cfg_free(cfgfile);
+	}
+
+	if (percent_done == -1)
+	{
+		percent_done = DEFAULT_PERCENT;
+	}
+
+	if (seconds_past == -1)
+	{
+		seconds_past = DEFAULT_SECONDS;
 	}
 }

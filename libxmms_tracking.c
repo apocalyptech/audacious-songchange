@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.14 2005/02/22 22:38:44 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.15 2005/02/22 22:41:38 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -202,6 +202,7 @@ static void *worker_func(void *data)
 	char *fname;
 	Formatter *formatter;
 	char *cmdstring = NULL;
+	gchar *temp;
 
 	otime = xmms_remote_get_output_time(sessid);
 
@@ -260,7 +261,9 @@ static void *worker_func(void *data)
 				associate(formatter, 'y', meta->year);
 				associate(formatter, 'g', meta->genre);
 				associate(formatter, 'n', meta->track);
-				associate(formatter, 's', g_strdup_printf("%d", len/1000));
+				temp = g_strdup(printf("%d", len/1000));
+				associate(formatter, 's', temp);
+				g_free(temp);
 				cmdstring = xmms_formatter_format(formatter, cmd_line);
 
 				/* Run the command */
@@ -350,7 +353,11 @@ static void configure(void)
 	/* Entry box for Percent Done */
 	percent_entry = gtk_entry_new();
 	if (percent_done)
-		gtk_entry_set_text(GTK_ENTRY(percent_entry), g_strdup_printf("%d", percent_done));
+	{
+		temp = g_strdup_printf("%d", percent_done);
+		gtk_entry_set_text(GTK_ENTRY(percent_entry), temp);
+		g_free(temp);
+	}
 	gtk_widget_set_usize(percent_entry, 200, -1);
 	gtk_box_pack_start(GTK_BOX(percent_hbox), percent_entry, TRUE, TRUE, 0);
 
@@ -372,7 +379,11 @@ static void configure(void)
 	/* Entry box for Seconds Past */
 	seconds_entry = gtk_entry_new();
 	if (seconds_past)
-		gtk_entry_set_text(GTK_ENTRY(seconds_entry), g_strdup_printf("%d", seconds_past));
+	{
+		temp = g_strdup_printf("%d", seconds_past);
+		gtk_entry_set_text(GTK_ENTRY(seconds_entry), temp);
+		g_free(temp);
+	}
 	gtk_widget_set_usize(seconds_entry, 200, -1);
 	gtk_box_pack_start(GTK_BOX(seconds_hbox), seconds_entry, TRUE, TRUE, 0);
 

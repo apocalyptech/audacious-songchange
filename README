@@ -5,3 +5,4 @@ TODO:
    count both times
  * Make sure we don't have memory leaks and the like
  * Add in minimum file length option
+ * Make sure we don't try to get tag information for remote URLs

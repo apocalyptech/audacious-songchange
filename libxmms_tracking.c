@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.11 2005/02/18 23:32:59 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.12 2005/02/19 00:17:54 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -23,6 +23,7 @@
 
 /* Local includes */
 #include "config.h"
+#include "tags/include/tags.h"
 
 /* Other defines */
 #define CFGCAT "xmms_tracking"
@@ -135,8 +136,8 @@ static void *worker_func(void *data)
 	int pos, len;
 	int oldtime = 0;
 	int docmd;
-	/*Formatter *formatter;*/
-	char *str;
+	metatag_t *meta;
+	char *fname;
 
 	otime = xmms_remote_get_output_time(sessid);
 
@@ -180,21 +181,20 @@ static void *worker_func(void *data)
 			prevlen = len;
 
 			/* Run the command */
-			/* Format codes:
-			 *
-			 *   F - frequency (Hz)
-			 *   c - number of channels
-			 *   f - filename (full path)
-			 *   l - length (milliseconds)
-			 *   n - name
-			 *   r - rate (in bits per second)
-			 *   s - name (again)
-			 *   t - playlist position (%02d)
-			 */
 			if (cmd_line && strlen(cmd_line) > 0)
 			{
-				str = xmms_remote_get_playlist_file(sessid, pos);
-				fprintf(stderr, "Would run the command now, for '%s' at second %d, pos %d\n", str, (otime/1000), pos);
+				/* Get meta information */
+				fname = xmms_remote_get_playlist_file(sessid, pos);
+				meta = metatag_new();
+				get_tag_data(meta, fname, 0);
+				if (meta->artist != NULL)
+				{
+					fprintf(stderr, "Would run the command now, for artist '%s' at second %d, pos %d\n", meta->artist, (otime/1000), pos);
+				}
+				else
+				{
+					fprintf(stderr, "Null artist for filename '%s' at second %d, pos %d\n", fname, (otime/1000), pos);
+				}
 			}
 			else
 			{

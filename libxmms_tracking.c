@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.10 2005/02/18 21:53:42 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.11 2005/02/18 23:32:59 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -135,6 +135,8 @@ static void *worker_func(void *data)
 	int pos, len;
 	int oldtime = 0;
 	int docmd;
+	/*Formatter *formatter;*/
+	char *str;
 
 	otime = xmms_remote_get_output_time(sessid);
 
@@ -178,7 +180,26 @@ static void *worker_func(void *data)
 			prevlen = len;
 
 			/* Run the command */
-			fprintf(stderr, "Would run the command now, at second %d, pos %d\n", (otime/1000), pos);
+			/* Format codes:
+			 *
+			 *   F - frequency (Hz)
+			 *   c - number of channels
+			 *   f - filename (full path)
+			 *   l - length (milliseconds)
+			 *   n - name
+			 *   r - rate (in bits per second)
+			 *   s - name (again)
+			 *   t - playlist position (%02d)
+			 */
+			if (cmd_line && strlen(cmd_line) > 0)
+			{
+				str = xmms_remote_get_playlist_file(sessid, pos);
+				fprintf(stderr, "Would run the command now, for '%s' at second %d, pos %d\n", str, (otime/1000), pos);
+			}
+			else
+			{
+				fprintf(stderr, "Would run the command now, but no command present.\n");
+			}
 		}
 		run = going;
 		usleep(100000);

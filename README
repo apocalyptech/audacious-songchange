@@ -4,6 +4,5 @@ TODO:
  * figure out how to let me dbl-click on the same file and have it
    count both times
  * Make sure we don't have memory leaks and the like
- * Add in minimum file length option
  * Make sure we don't try to get tag information for remote URLs
  * Make config changes apply automatically

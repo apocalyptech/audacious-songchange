@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.19 2005/02/25 02:19:08 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.20 2005/02/25 02:24:35 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -240,6 +240,14 @@ static void *worker_func(void *data)
 		if (otime - oldtime > 5000 && (prevpos != pos && prevlen != len && playing))
 		{
 			fprintf(stderr, "No skipping allowed, discarding song.\n");
+			prevpos = pos;
+			prevlen = len;
+		}
+
+		/* Check for minimum length */
+		if (len < (minimum_len*1000) && (prevpos != pos && prevlen != len && playing))
+		{
+			fprintf(stderr, "Song shorter than %d seconds, discarding song.\n", minimum_len);
 			prevpos = pos;
 			prevlen = len;
 		}

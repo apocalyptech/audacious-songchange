@@ -1,3 +1,4 @@
+/* $Id: libxmms_tracking.c,v 1.4 2005/02/18 05:46:19 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>

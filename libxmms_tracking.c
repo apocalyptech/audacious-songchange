@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.13 2005/02/22 22:01:21 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.14 2005/02/22 22:38:44 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -168,6 +168,26 @@ static void associate(Formatter *formatter, char letter, char *data)
 	}
 }
 
+static void bury_child(int signal)
+{
+	waitpid(-1, NULL, WNOHANG);
+}
+
+static void execute_command(gchar *cmd)
+{
+	gchar *argv[4] = {"/bin/sh", "-c", NULL, NULL};
+	gint i;
+	argv[2] = cmd;
+	signal(SIGCHLD, bury_child);
+	if (fork() == 0)
+	{
+		/* We don't want this process to hog the audio device etc */
+		for (i=3; i<255; i++)
+			close(i);
+		execv("/bin/sh", argv);
+	}
+}
+
 static void *worker_func(void *data)
 {
 	int otime;
@@ -244,8 +264,9 @@ static void *worker_func(void *data)
 				cmdstring = xmms_formatter_format(formatter, cmd_line);
 
 				/* Run the command */
-				fprintf(stderr, "Would run '%s' now second %d, pos %d\n", cmdstring, (otime/1000), pos);
-				g_free(cmdstring);
+				fprintf(stderr, "Second %d, pos %d - Running: %s\n", (otime/1000), pos, cmdstring);
+				execute_command(cmdstring);
+				g_free(cmdstring);  /* according to song_change.c, this could get freed too early */
 			}
 			else
 			{

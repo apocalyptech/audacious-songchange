@@ -1,3 +1,4 @@
+# $Id: Makefile.am,v 1.2 2005/02/18 05:48:38 pez Exp $
 lib_LTLIBRARIES = libxmms_tracking.la
 
 libdir = @XMMS_GENERAL_PLUGIN_DIR@

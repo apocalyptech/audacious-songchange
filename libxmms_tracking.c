@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.22 2005/02/25 15:29:49 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.23 2005/03/09 17:21:28 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -132,6 +132,33 @@ static void save_and_close(GtkWidget *w, gpointer data)
 	gtk_widget_destroy(configure_win);
 }
 
+static char *wtfescape(char *string)
+{
+	const gchar *special = "`"; /* chars to escape */
+	char *in = string, *out;
+	char *escaped;
+	int num = 0;
+
+	while (*in != '\0')
+		if (strchr(special, *in++))
+			num++;
+
+	escaped = g_malloc(strlen(string) + num + 1);
+
+	in = string;
+	out = escaped;
+	
+	while (*in != '\0')
+	{
+		if (strchr(special, *in))
+			*out++ = '\\';
+		*out++ = *in++;
+	}
+	*out = '\0';
+
+	return escaped;
+}
+
 static char *escape_shell_chars(char *string)
 {
 	const gchar *special = "$`\"\\"; /* chars to escape */
@@ -156,7 +183,7 @@ static char *escape_shell_chars(char *string)
 	}
 	*out = '\0';
 
-	return escaped;
+	return wtfescape(wtfescape(escaped));
 }
 
 static void associate(Formatter *formatter, char letter, char *data)

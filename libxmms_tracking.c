@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.20 2005/02/25 02:24:35 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.21 2005/02/25 04:02:45 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -326,6 +326,7 @@ static void configure(void)
 	gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed), &configure_win);
 	gtk_window_set_title(GTK_WINDOW(configure_win), "Tracking Information");
 	gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
+	gtk_window_set_default_size(GTK_WINDOW(configure_win), 400, 300);
 
 	/* Set up the vbox to put things in */
 	configure_vbox = gtk_vbox_new(FALSE, 10);
@@ -348,12 +349,14 @@ static void configure(void)
 	/* Description for Conditional Parameters */
 	temp = g_strdup_printf("The command will be run when one of the following "
 			"conditions are met, whichever triggers first.  Defaults are "
-			"to trigger at either 50%% done or 240 seconds past.");
+			"to trigger at either 50%% done or 240 seconds past.  Also, "
+			"the command will not trigger unless the song is at least the "
+			"specified number of seconds long.");
 	condition_desc = gtk_label_new(temp);
 	g_free(temp);
-	gtk_label_set_justify(GTK_LABEL(condition_desc), GTK_JUSTIFY_LEFT);
+	gtk_label_set_justify(GTK_LABEL(condition_desc), GTK_JUSTIFY_FILL);
 	gtk_misc_set_alignment(GTK_MISC(condition_desc), 0, 0.5);
-	gtk_box_pack_start(GTK_BOX(condition_vbox), condition_desc, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(condition_vbox), condition_desc, TRUE, TRUE, 0);
 	gtk_label_set_line_wrap(GTK_LABEL(condition_desc), TRUE);
 
 	/* Label for Percent Done */

@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.7 2005/02/18 06:39:03 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.8 2005/02/18 06:40:21 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -186,7 +186,7 @@ static void configure(void)
 	/* Label for Seconds Past */
 	seconds_hbox = gtk_hbox_new(FALSE, 5);
 	gtk_box_pack_start(GTK_BOX(seconds_vbox), seconds_hbox, FALSE, FALSE, 0);
-	seconds_label = gtk_label_new("Percent Done:");
+	seconds_label = gtk_label_new("Seconds Past:");
 	gtk_box_pack_start(GTK_BOX(seconds_hbox), seconds_label, FALSE, FALSE, 0);
 
 	/* Entry box for Seconds Past */
@@ -208,7 +208,7 @@ static void configure(void)
 	/* Label for Command */
 	cmd_hbox = gtk_hbox_new(FALSE, 5);
 	gtk_box_pack_start(GTK_BOX(cmd_vbox), cmd_hbox, FALSE, FALSE, 0);
-	cmd_label = gtk_label_new("Percent Done:");
+	cmd_label = gtk_label_new("Command Line:");
 	gtk_box_pack_start(GTK_BOX(cmd_hbox), cmd_label, FALSE, FALSE, 0);
 
 	/* Entry box for Command */

@@ -5,17 +5,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "include/fmt.h"
-#include <curl/curl.h>
-
-char *fmt_escape(char *str)
-{
-	return curl_escape(str, 0);
-}
-
-char *fmt_unescape(char *str)
-{
-	return curl_unescape(str, 0);
-}
 
 char *fmt_timestr(time_t t, int gmt)
 {

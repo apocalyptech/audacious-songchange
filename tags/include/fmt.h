@@ -4,8 +4,6 @@
 
 #include <time.h>
 
-char *fmt_escape(char *);
-char *fmt_unescape(char *);
 char *fmt_timestr(time_t, int);
 char *fmt_vastr(char *, ...);
 void fmt_debug(char *, const char *, char *);

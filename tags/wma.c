@@ -23,7 +23,7 @@
 #include <string.h>
 #include "include/wma.h"
 #include "include/endian.h"
-#include "../fmt.h"
+#include "include/fmt.h"
 #include "include/unicode.h"
 #define WMA_GUID	(unsigned char [16]) \
 		      {	0x30, 0x26, 0xB2, 0x75, \

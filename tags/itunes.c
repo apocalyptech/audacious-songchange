@@ -23,7 +23,7 @@
 #include <string.h>
 #include "include/itunes.h"
 #include "include/endian.h"
-#include "../fmt.h"
+#include "include/fmt.h"
 #include "include/unicode.h"
 #define BUFFER_SIZE 4096
 #define NAME_ATOM	((0xa9 << 24) | ('n' << 16) | ('a' << 8) | ('m' << 0))

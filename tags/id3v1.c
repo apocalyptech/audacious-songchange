@@ -23,7 +23,7 @@
 #include <string.h>
 #include "include/id3v1.h"
 #include "include/endian.h"
-#include "../fmt.h"
+#include "include/fmt.h"
 #include "include/unicode.h"
 #define BUFFER_SIZE 4096
 

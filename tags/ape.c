@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "include/fmt.h"
 #include "include/ape.h"
 #include "include/endian.h"
-#include "../fmt.h"
 #include "include/unicode.h"
 #define BUFFER_SIZE 4096
 

@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../fmt.h"
+#include "include/fmt.h"
 #include "../config.h"
 #include "include/unicode.h"
 #include "include/tags.h"

@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.17 2005/02/22 23:23:24 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.18 2005/02/25 02:12:48 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -294,8 +294,9 @@ static void configure_ok_cb(GtkWidget *w, gpointer data)
 
 static void configure(void)
 {
-	GtkWidget *percent_hbox, *percent_label, *percent_frame, *percent_vbox, *percent_desc;
-	GtkWidget *seconds_hbox, *seconds_label, *seconds_frame, *seconds_vbox, *seconds_desc;
+	GtkWidget *condition_frame, *condition_vbox, *condition_desc;
+	GtkWidget *percent_hbox, *percent_label;
+	GtkWidget *seconds_hbox, *seconds_label;
 	GtkWidget *cmd_hbox, *cmd_label, *cmd_frame, *cmd_vbox, *cmd_desc;
 	GtkWidget *configure_bbox, *configure_ok, *configure_cancel;
 	gchar *temp;
@@ -315,39 +316,34 @@ static void configure(void)
 	configure_vbox = gtk_vbox_new(FALSE, 10);
 	gtk_container_add(GTK_CONTAINER(configure_win), configure_vbox);
 
-	/* Container for Percent Done indicator */
-	percent_frame = gtk_frame_new("Percent Done");
-	gtk_box_pack_start(GTK_BOX(configure_vbox), percent_frame, FALSE, FALSE, 0);
-	percent_vbox = gtk_vbox_new(FALSE, 10);
-	gtk_container_set_border_width(GTK_CONTAINER(percent_vbox), 5);
-	gtk_container_add(GTK_CONTAINER(percent_frame), percent_vbox);
-
-	/* Container for Seconds Past indicator */
-	seconds_frame = gtk_frame_new("Seconds Past");
-	gtk_box_pack_start(GTK_BOX(configure_vbox), seconds_frame, FALSE, FALSE, 0);
-	seconds_vbox = gtk_vbox_new(FALSE, 10);
-	gtk_container_set_border_width(GTK_CONTAINER(seconds_vbox), 5);
-	gtk_container_add(GTK_CONTAINER(seconds_frame), seconds_vbox);
+	/* Container for Conditional Parameters */
+	condition_frame = gtk_frame_new("Conditions");
+	gtk_box_pack_start(GTK_BOX(configure_vbox), condition_frame, FALSE, FALSE, 0);
+	condition_vbox = gtk_vbox_new(FALSE, 10);
+	gtk_container_set_border_width(GTK_CONTAINER(condition_vbox), 5);
+	gtk_container_add(GTK_CONTAINER(condition_frame), condition_vbox);
 
 	/* Container for Command indicator */
-	cmd_frame = gtk_frame_new("Seconds Past");
+	cmd_frame = gtk_frame_new("Command");
 	gtk_box_pack_start(GTK_BOX(configure_vbox), cmd_frame, FALSE, FALSE, 0);
 	cmd_vbox = gtk_vbox_new(FALSE, 10);
 	gtk_container_set_border_width(GTK_CONTAINER(cmd_vbox), 5);
 	gtk_container_add(GTK_CONTAINER(cmd_frame), cmd_vbox);
 
-	/* Description for Percent Done */
-	temp = g_strdup_printf("Run the command when the file is x%% done.");
-	percent_desc = gtk_label_new(temp);
+	/* Description for Conditional Parameters */
+	temp = g_strdup_printf("The command will be run when one of the following "
+			"conditions are met, whichever triggers first.  Defaults are "
+			"to trigger at either 50%% done or 240 seconds past.");
+	condition_desc = gtk_label_new(temp);
 	g_free(temp);
-	gtk_label_set_justify(GTK_LABEL(percent_desc), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment(GTK_MISC(percent_desc), 0, 0.5);
-	gtk_box_pack_start(GTK_BOX(percent_vbox), percent_desc, FALSE, FALSE, 0);
-	gtk_label_set_line_wrap(GTK_LABEL(percent_desc), TRUE);
+	gtk_label_set_justify(GTK_LABEL(condition_desc), GTK_JUSTIFY_LEFT);
+	gtk_misc_set_alignment(GTK_MISC(condition_desc), 0, 0.5);
+	gtk_box_pack_start(GTK_BOX(condition_vbox), condition_desc, FALSE, FALSE, 0);
+	gtk_label_set_line_wrap(GTK_LABEL(condition_desc), TRUE);
 
 	/* Label for Percent Done */
 	percent_hbox = gtk_hbox_new(FALSE, 5);
-	gtk_box_pack_start(GTK_BOX(percent_vbox), percent_hbox, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(condition_vbox), percent_hbox, FALSE, FALSE, 0);
 	percent_label = gtk_label_new("Percent Done:");
 	gtk_box_pack_start(GTK_BOX(percent_hbox), percent_label, FALSE, FALSE, 0);
 
@@ -362,18 +358,9 @@ static void configure(void)
 	gtk_widget_set_usize(percent_entry, 200, -1);
 	gtk_box_pack_start(GTK_BOX(percent_hbox), percent_entry, TRUE, TRUE, 0);
 
-	/* Description for Seconds Past */
-	temp = g_strdup_printf("Run the command if the file passes x seconds.");
-	seconds_desc = gtk_label_new(temp);
-	g_free(temp);
-	gtk_label_set_justify(GTK_LABEL(seconds_desc), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment(GTK_MISC(seconds_desc), 0, 0.5);
-	gtk_box_pack_start(GTK_BOX(seconds_vbox), seconds_desc, FALSE, FALSE, 0);
-	gtk_label_set_line_wrap(GTK_LABEL(seconds_desc), TRUE);
-
 	/* Label for Seconds Past */
 	seconds_hbox = gtk_hbox_new(FALSE, 5);
-	gtk_box_pack_start(GTK_BOX(seconds_vbox), seconds_hbox, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(condition_vbox), seconds_hbox, FALSE, FALSE, 0);
 	seconds_label = gtk_label_new("Seconds Past:");
 	gtk_box_pack_start(GTK_BOX(seconds_hbox), seconds_label, FALSE, FALSE, 0);
 

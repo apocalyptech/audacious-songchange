@@ -20,6 +20,7 @@
 
 static void init(void);
 static void cleanup(void);
+static void configure(void);
 
 static GeneralPlugin xmms_tracking =
 {
@@ -29,7 +30,7 @@ static GeneralPlugin xmms_tracking =
 	NULL,		/* description */
 	init,
 	NULL,
-	NULL,		/* configure_dialog */
+	configure,
 	cleanup,
 };
 
@@ -41,5 +42,9 @@ static void init(void)
 static void cleanup(void)
 {
 	fprintf(stderr, "In cleanup\n");
-	/* Not much */
+}
+
+static void configure(void)
+{
+	fprintf(stderr, "In configure\n");
 }

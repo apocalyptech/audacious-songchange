@@ -6,3 +6,5 @@ TODO:
  * Make sure we don't have memory leaks and the like
  * Add in minimum file length option
  * Make sure we don't try to get tag information for remote URLs
+ * Make sure we don't have a memory leak using g_strdup_printf()
+   without g_free()

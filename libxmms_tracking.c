@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.6 2005/02/18 06:37:02 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.7 2005/02/18 06:39:03 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -175,7 +175,7 @@ static void configure(void)
 	gtk_box_pack_start(GTK_BOX(percent_hbox), percent_entry, TRUE, TRUE, 0);
 
 	/* Description for Seconds Past */
-	temp = g_strdup_printf("Run the command when the file is x%% done.");
+	temp = g_strdup_printf("Run the command if the file passes x seconds.");
 	seconds_desc = gtk_label_new(temp);
 	g_free(temp);
 	gtk_label_set_justify(GTK_LABEL(seconds_desc), GTK_JUSTIFY_LEFT);
@@ -197,7 +197,7 @@ static void configure(void)
 	gtk_box_pack_start(GTK_BOX(seconds_hbox), seconds_entry, TRUE, TRUE, 0);
 
 	/* Description for Command */
-	temp = g_strdup_printf("Run the command when the file is x%% done.");
+	temp = g_strdup_printf("Run this command.");
 	cmd_desc = gtk_label_new(temp);
 	g_free(temp);
 	gtk_label_set_justify(GTK_LABEL(cmd_desc), GTK_JUSTIFY_LEFT);

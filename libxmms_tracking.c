@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.9 2005/02/18 21:48:31 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.10 2005/02/18 21:53:42 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -173,6 +173,11 @@ static void *worker_func(void *data)
 		/* Run the command */
 		if ((pos != prevpos && len != prevlen) && playing && docmd)
 		{
+			/* This'll make sure we only call it once per track */
+			prevpos = pos;
+			prevlen = len;
+
+			/* Run the command */
 			fprintf(stderr, "Would run the command now, at second %d, pos %d\n", (otime/1000), pos);
 		}
 		run = going;

@@ -1,1 +1,7 @@
 http://www.nobugs.org/developer/xmms/xmms-nobugs.html
+
+TODO:
+ * figure out how to let me dbl-click on the same file and have it
+   count both times
+ * Make sure we don't have memory leaks and the like
+ * Add in minimum file length option

@@ -18,6 +18,9 @@
 #include <xmms/xmmsctrl.h>
 #include <xmms/formatter.h>
 
+/* Local includes */
+#include "config.h"
+
 static void init(void);
 static void cleanup(void);
 static void configure(void);
@@ -33,6 +36,12 @@ static GeneralPlugin xmms_tracking =
 	configure,
 	cleanup,
 };
+
+GeneralPlugin *get_gplugin_info(void)
+{
+	xmms_tracking.description = g_strdup_printf("XMMS-Tracking %s", VERSION);
+	return &xmms_tracking;
+}
 
 static void init(void)
 {

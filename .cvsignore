@@ -11,3 +11,7 @@ config.log
 config.status
 libtool
 stamp-h1
+.libs
+libxmms_tracking.la
+libxmms_tracking.lo
+stamp-h

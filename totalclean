@@ -1,1 +1,1 @@
-rm -rf Makefile.in aclocal.m4 ape.loT autom4te.cache config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs stamp-h.in
+rm -rf Makefile.in aclocal.m4 ape.loT autom4te.cache config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing mkinstalldirs stamp-h.in ape.lo fmt.lo id3genres.lo id3v1.lo id3v2.lo itunes.lo tags.lo unicode.lo vorbis.lo wma.lo Makefile config.h config.log config.status libtool libxmms_tracking.la libxmms_tracking.lo stamp-h stamp-h1 .deps .libs

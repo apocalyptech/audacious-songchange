@@ -15,3 +15,13 @@ stamp-h1
 libxmms_tracking.la
 libxmms_tracking.lo
 stamp-h
+ape.lo
+fmt.lo
+id3genres.lo
+id3v1.lo
+id3v2.lo
+itunes.lo
+tags.lo
+unicode.lo
+vorbis.lo
+wma.lo

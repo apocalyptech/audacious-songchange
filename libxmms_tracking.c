@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.16 2005/02/22 22:43:58 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.17 2005/02/22 23:23:24 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -265,6 +265,7 @@ static void *worker_func(void *data)
 				associate(formatter, 's', temp);
 				g_free(temp);
 				cmdstring = xmms_formatter_format(formatter, cmd_line);
+				xmms_formatter_destroy(formatter);
 
 				/* Run the command */
 				fprintf(stderr, "Second %d, pos %d - Running: %s\n", (otime/1000), pos, cmdstring);

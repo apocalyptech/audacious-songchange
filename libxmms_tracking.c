@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.18 2005/02/25 02:12:48 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.19 2005/02/25 02:19:08 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -29,6 +29,7 @@
 #define CFGCAT "xmms_tracking"
 #define DEFAULT_PERCENT 50
 #define DEFAULT_SECONDS 240
+#define DEFAULT_MINIMUM 30
 
 /* Hooks */
 static void init(void);
@@ -41,6 +42,7 @@ static void read_config(void);
 /* Our Config Vars */
 static gint percent_done = -1;
 static gint seconds_past = -1;
+static gint minimum_len = -1;
 static gchar *cmd_line = NULL;
 
 /* Keep track of the configure window */
@@ -50,6 +52,7 @@ static GtkWidget *configure_vbox = NULL;
 /* Keep track of our config window input boxes */
 static GtkWidget *percent_entry;
 static GtkWidget *seconds_entry;
+static GtkWidget *minimum_entry;
 static GtkWidget *cmd_entry;
 
 /* Our thread prototype and handle */
@@ -109,16 +112,19 @@ static void save_and_close(GtkWidget *w, gpointer data)
 {
 	char *percent;
 	char *seconds;
+	char *minlen;
 	char *cmd;
 
 	ConfigFile *cfgfile = xmms_cfg_open_default_file();
 
 	percent = gtk_entry_get_text(GTK_ENTRY(percent_entry));
 	seconds = gtk_entry_get_text(GTK_ENTRY(seconds_entry));
+	minlen = gtk_entry_get_text(GTK_ENTRY(minimum_entry));
 	cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
 
 	xmms_cfg_write_int(cfgfile, CFGCAT, "percent_done", atoi(percent));
 	xmms_cfg_write_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
+	xmms_cfg_write_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
 	xmms_cfg_write_string(cfgfile, CFGCAT, "cmd_line", cmd);
 	xmms_cfg_write_default_file(cfgfile);
 	xmms_cfg_free(cfgfile);
@@ -297,6 +303,7 @@ static void configure(void)
 	GtkWidget *condition_frame, *condition_vbox, *condition_desc;
 	GtkWidget *percent_hbox, *percent_label;
 	GtkWidget *seconds_hbox, *seconds_label;
+	GtkWidget *minimum_hbox, *minimum_label;
 	GtkWidget *cmd_hbox, *cmd_label, *cmd_frame, *cmd_vbox, *cmd_desc;
 	GtkWidget *configure_bbox, *configure_ok, *configure_cancel;
 	gchar *temp;
@@ -375,6 +382,23 @@ static void configure(void)
 	gtk_widget_set_usize(seconds_entry, 200, -1);
 	gtk_box_pack_start(GTK_BOX(seconds_hbox), seconds_entry, TRUE, TRUE, 0);
 
+	/* Label for Minimum Length */
+	minimum_hbox = gtk_hbox_new(FALSE, 5);
+	gtk_box_pack_start(GTK_BOX(condition_vbox), minimum_hbox, FALSE, FALSE, 0);
+	minimum_label = gtk_label_new("Minimum Length:");
+	gtk_box_pack_start(GTK_BOX(minimum_hbox), minimum_label, FALSE, FALSE, 0);
+
+	/* Entry box for Minimum Length */
+	minimum_entry = gtk_entry_new();
+	if (minimum_len)
+	{
+		temp = g_strdup_printf("%d", minimum_len);
+		gtk_entry_set_text(GTK_ENTRY(minimum_entry), temp);
+		g_free(temp);
+	}
+	gtk_widget_set_usize(minimum_entry, 200, -1);
+	gtk_box_pack_start(GTK_BOX(minimum_hbox), minimum_entry, TRUE, TRUE, 0);
+
 	/* Description for Command */
 	temp = g_strdup_printf("Run this command.");
 	cmd_desc = gtk_label_new(temp);
@@ -433,6 +457,7 @@ static void read_config(void)
 	{
 		xmms_cfg_read_int(cfgfile, CFGCAT, "percent_done", &percent_done);
 		xmms_cfg_read_int(cfgfile, CFGCAT, "seconds_past", &seconds_past);
+		xmms_cfg_read_int(cfgfile, CFGCAT, "minimum_len", &minimum_len);
 		xmms_cfg_read_string(cfgfile, CFGCAT, "cmd_line", &cmd_line);
 		xmms_cfg_free(cfgfile);
 	}
@@ -445,5 +470,10 @@ static void read_config(void)
 	if (seconds_past == -1)
 	{
 		seconds_past = DEFAULT_SECONDS;
+	}
+
+	if (minimum_len == -1)
+	{
+		minimum_len = DEFAULT_MINIMUM;
 	}
 }

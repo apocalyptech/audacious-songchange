@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.24 2005/03/09 17:21:55 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.25 2005/11/28 17:09:51 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -137,7 +137,7 @@ static void save_and_close(GtkWidget *w, gpointer data)
  */
 static char *wtfescape(char *string)
 {
-	const gchar *special = "`"; /* chars to escape */
+	const gchar *special = "$`"; /* chars to escape */
 	char *in = string, *out;
 	char *escaped;
 	int num = 0;

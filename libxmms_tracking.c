@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.27 2005/11/28 18:50:36 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.28 2005/11/28 19:39:54 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -30,6 +30,9 @@
 #define ConfigFile ConfigDb
 #define xmms_cfg_open_default_file bmp_cfg_db_open
 #define xmms_cfg_read_string bmp_cfg_db_get_string
+#define xmms_cfg_read_int bmp_cfg_db_get_int
+#define xmms_cfg_write_string bmp_cfg_db_set_string
+#define xmms_cfg_write_int bmp_cfg_db_set_int
 #define xmms_cfg_free bmp_cfg_db_close
 #endif
 

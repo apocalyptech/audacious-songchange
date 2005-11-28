@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.26 2005/11/28 18:07:40 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.27 2005/11/28 18:50:36 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -22,11 +22,11 @@
 #include <xmms/xmmsctrl.h>
 #include <xmms/formatter.h>
 #endif
-#ifdef MAKE_BMP
-#include <bmp/plugin.h>
-#include <bmp/configdb.h>
-#include <bmp/beepctrl.h>
-#include <bmp/formatter.h>
+#ifdef MAKE_AUD
+#include <audacious/plugin.h>
+#include <audacious/configdb.h>
+#include <audacious/beepctrl.h>
+#include <audacious/formatter.h>
 #define ConfigFile ConfigDb
 #define xmms_cfg_open_default_file bmp_cfg_db_open
 #define xmms_cfg_read_string bmp_cfg_db_get_string
@@ -91,8 +91,8 @@ GeneralPlugin *get_gplugin_info(void)
 #ifdef MAKE_XMMS
 	xmms_tracking.description = g_strdup_printf("XMMS-Tracking %s", VERSION);
 #endif
-#ifdef MAKE_BMP
-	xmms_tracking.description = g_strdup_printf("BMP-Tracking %s", VERSION);
+#ifdef MAKE_AUD
+	xmms_tracking.description = g_strdup_printf("Audacious-Tracking %s", VERSION);
 #endif
 	return &xmms_tracking;
 }
@@ -398,7 +398,7 @@ static void configure(void)
 #ifdef MAKE_XMMS
 	configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
 #endif
-#ifdef MAKE_BMP
+#ifdef MAKE_AUD
 	configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint(GTK_WINDOW(configure_win), GDK_WINDOW_TYPE_HINT_DIALOG);
 #endif

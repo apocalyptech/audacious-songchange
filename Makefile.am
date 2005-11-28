@@ -1,11 +1,11 @@
-# $Id: Makefile.am,v 1.5 2005/11/28 18:07:40 pez Exp $
+# $Id: Makefile.am,v 1.6 2005/11/28 18:50:36 pez Exp $
 if MAKE_XMMS
 xmmslib_LTLIBRARIES = libxmms_tracking.la
 xmmslibdir = @XMMS_GENERAL_PLUGIN_DIR@
 endif
-if MAKE_BMP
-bmplib_LTLIBRARIES = libbmp_tracking.la
-bmplibdir = `pkg-config bmp --variable=general_plugin_dir`
+if MAKE_AUD
+audlib_LTLIBRARIES = libaud_tracking.la
+audlibdir = `pkg-config audacious --variable=general_plugin_dir`
 endif
 
 AM_CFLAGS = -Wall @CFLAGS@ @GTK_CFLAGS@ -I$(tob_builddir) -I$(top_srcdir) \
@@ -28,10 +28,10 @@ libxmms_tracking_la_SOURCES = libxmms_tracking.c \
 	tags/vorbis.c \
 	tags/wma.c
 
-libbmp_tracking_la_CFLAGS = $(AM_CFLAGS) @BMP_CFLAGS@ -DMAKE_BMP=1
-libbmp_tracking_la_LIBS = $(LIBS) @BMP_LIBS@
-libbmp_tracking_la_LDFLAGS = $(AM_LDFLAGS)
-libbmp_tracking_la_SOURCES = libxmms_tracking.c \
+libaud_tracking_la_CFLAGS = $(AM_CFLAGS) @AUD_CFLAGS@ -DMAKE_AUD=1
+libaud_tracking_la_LIBS = $(LIBS) @AUD_LIBS@
+libaud_tracking_la_LDFLAGS = $(AM_LDFLAGS)
+libaud_tracking_la_SOURCES = libxmms_tracking.c \
 	tags/ape.c \
 	tags/fmt.c \
 	tags/id3genres.c \

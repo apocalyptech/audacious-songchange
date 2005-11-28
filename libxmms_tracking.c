@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.25 2005/11/28 17:09:51 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.26 2005/11/28 18:07:40 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -15,11 +15,23 @@
 /* GTK Includes */
 #include <gtk/gtk.h>
 
-/* XMMS Includes */
+/* Player Includes */
+#ifdef MAKE_XMMS
 #include <xmms/plugin.h>
 #include <xmms/configfile.h>
 #include <xmms/xmmsctrl.h>
 #include <xmms/formatter.h>
+#endif
+#ifdef MAKE_BMP
+#include <bmp/plugin.h>
+#include <bmp/configdb.h>
+#include <bmp/beepctrl.h>
+#include <bmp/formatter.h>
+#define ConfigFile ConfigDb
+#define xmms_cfg_open_default_file bmp_cfg_db_open
+#define xmms_cfg_read_string bmp_cfg_db_get_string
+#define xmms_cfg_free bmp_cfg_db_close
+#endif
 
 /* Local includes */
 #include "config.h"
@@ -76,7 +88,12 @@ static GeneralPlugin xmms_tracking =
 
 GeneralPlugin *get_gplugin_info(void)
 {
+#ifdef MAKE_XMMS
 	xmms_tracking.description = g_strdup_printf("XMMS-Tracking %s", VERSION);
+#endif
+#ifdef MAKE_BMP
+	xmms_tracking.description = g_strdup_printf("BMP-Tracking %s", VERSION);
+#endif
 	return &xmms_tracking;
 }
 
@@ -126,7 +143,9 @@ static void save_and_close(GtkWidget *w, gpointer data)
 	xmms_cfg_write_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
 	xmms_cfg_write_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
 	xmms_cfg_write_string(cfgfile, CFGCAT, "cmd_line", cmd);
+#ifdef MAKE_XMMS
 	xmms_cfg_write_default_file(cfgfile);
+#endif
 	xmms_cfg_free(cfgfile);
 
 	gtk_widget_destroy(configure_win);
@@ -376,9 +395,15 @@ static void configure(void)
 	read_config();
 
 	/* Set up the initial window */
+#ifdef MAKE_XMMS
 	configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
-	gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed), &configure_win);
+#endif
+#ifdef MAKE_BMP
+	configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_type_hint(GTK_WINDOW(configure_win), GDK_WINDOW_TYPE_HINT_DIALOG);
+#endif
 	gtk_window_set_title(GTK_WINDOW(configure_win), "Tracking Information");
+	gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed), &configure_win);
 	gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
 	gtk_window_set_default_size(GTK_WINDOW(configure_win), 400, 300);
 

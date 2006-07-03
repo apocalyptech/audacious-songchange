@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.28 2005/11/28 19:39:54 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.29 2006/07/03 16:44:57 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -292,6 +292,10 @@ static void *worker_func(void *data)
 		if (otime - oldtime > 5000 && (prevpos != pos && prevlen != len && playing))
 		{
 			fprintf(stderr, "No skipping allowed, discarding song.\n");
+			fprintf(stderr, "otime = %d, oldtime = %d\n", otime, oldtime);
+			fprintf(stderr, "prevpos = %d, pos = %d\n", prevpos, pos);
+			fprintf(stderr, "prevlen = %d, len = %d\n", prevlen, len);
+			fprintf(stderr, "playing = %d\n", playing);
 			prevpos = pos;
 			prevlen = len;
 		}

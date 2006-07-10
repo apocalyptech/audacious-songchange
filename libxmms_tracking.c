@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.30 2006/07/10 15:17:37 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.31 2006/07/10 15:31:06 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -271,22 +271,31 @@ static void *worker_func(void *data)
 		playing = xmms_remote_is_playing(sessid);
 		if (!playing)
 		{
-			if (!playnotice)
-			{
-				fprintf(stderr, "No longer playing at pos %d, len %d, otime %d\n", pos, len, otime);
-				playnotice = 1;
-			}
 			prevpos = -1;
 			prevlen = -1;
-		}
-		else
-		{
-			playnotice = 0;
 		}
 
 		/* Grab information about the current track */
 		pos = xmms_remote_get_playlist_pos(sessid);
 		len = xmms_remote_get_playlist_time(sessid, pos);
+
+		/* Some debugging stuff */
+		if (!playing)
+		{
+			if (!playnotice)
+			{
+				fprintf(stderr, "No longer playing at pos %d, prevpos %d, len %d, prevlen %d, otime %d\n", pos, prevpos, len, prevlen, otime);
+				playnotice = 1;
+			}
+		}
+		else
+		{
+			if (playnotice)
+			{
+				fprintf(stderr, "Started playing at pos %d, prevpos %d, len %d, prevlen %d, otime %d\n", pos, prevpos, len, prevlen, otime);
+				playnotice = 0;
+			}
+		}
 
 		/* Figure out how much time has past */
 		if (otime == -1)

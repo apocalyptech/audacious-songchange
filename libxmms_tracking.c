@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.32 2006/07/10 16:51:45 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.33 2006/07/10 19:46:16 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -318,6 +318,13 @@ static void *worker_func(void *data)
 				fprintf(stderr, "prevpos = %d, pos = %d\n", prevpos, pos);
 				fprintf(stderr, "prevlen = %d, len = %d\n", prevlen, len);
 				fprintf(stderr, "playing = %d\n", playing);
+				prevpos = pos;
+				prevlen = len;
+			}
+			else
+			{
+				/* We've encountered some glitch on newer Audacious builds. */
+				fprintf(stderr, "Glitch!  Resetting, we'll see if that helps.\n");
 				prevpos = pos;
 				prevlen = len;
 			}

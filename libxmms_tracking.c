@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.31 2006/07/10 15:31:06 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.32 2006/07/10 16:51:45 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -310,13 +310,17 @@ static void *worker_func(void *data)
 		/* Sanity check - has the user skipped in the track? */
 		if (otime - oldtime > 5000 && (prevpos != pos && prevlen != len && playing))
 		{
-			fprintf(stderr, "No skipping allowed, discarding song.\n");
-			fprintf(stderr, "otime = %d, oldtime = %d\n", otime, oldtime);
-			fprintf(stderr, "prevpos = %d, pos = %d\n", prevpos, pos);
-			fprintf(stderr, "prevlen = %d, len = %d\n", prevlen, len);
-			fprintf(stderr, "playing = %d\n", playing);
-			prevpos = pos;
-			prevlen = len;
+			/* However, if our prevlen and prevpos are -1, then we weren't playing previously, so just go ahead */
+			if (prevlen != -1 && prevpos != -1)
+			{
+				fprintf(stderr, "No skipping allowed, discarding song.\n");
+				fprintf(stderr, "otime = %d, oldtime = %d\n", otime, oldtime);
+				fprintf(stderr, "prevpos = %d, pos = %d\n", prevpos, pos);
+				fprintf(stderr, "prevlen = %d, len = %d\n", prevlen, len);
+				fprintf(stderr, "playing = %d\n", playing);
+				prevpos = pos;
+				prevlen = len;
+			}
 		}
 
 		/* Check for minimum length */

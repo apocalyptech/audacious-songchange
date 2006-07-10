@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.29 2006/07/03 16:44:57 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.30 2006/07/10 15:17:37 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -253,9 +253,10 @@ static void *worker_func(void *data)
 	int run = 1;
 	int sessid = xmms_tracking.xmms_session;
 	int prevpos = -1, prevlen = -1;
-	int pos, len;
+	int pos = -1, len = -1;
 	int oldtime = 0;
 	int docmd;
+	int playnotice = 0;
 	metatag_t *meta;
 	char *fname;
 	Formatter *formatter;
@@ -270,8 +271,17 @@ static void *worker_func(void *data)
 		playing = xmms_remote_is_playing(sessid);
 		if (!playing)
 		{
+			if (!playnotice)
+			{
+				fprintf(stderr, "No longer playing at pos %d, len %d, otime %d\n", pos, len, otime);
+				playnotice = 1;
+			}
 			prevpos = -1;
 			prevlen = -1;
+		}
+		else
+		{
+			playnotice = 0;
 		}
 
 		/* Grab information about the current track */

@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.34 2006/07/13 17:21:56 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.35 2006/07/13 18:22:23 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -369,6 +369,13 @@ static void *worker_func(void *data)
 			/* reset prev vars if we're not playing */
 			prevpos = -1;
 			oldtime = -1;
+
+			/* Notify on stderr if we were processing */
+			if (processtrack)
+			{
+				processtrack = 0;
+				fprintf(stderr, "pos %d, len %d (%ds): Stopped track processing\n", pos+1, len, (len/1000));
+			}
 		}
 
 		/* Make sure we don't keep going if we've been called off */

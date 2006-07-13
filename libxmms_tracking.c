@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.33 2006/07/10 19:46:16 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.34 2006/07/13 17:21:56 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -248,136 +248,133 @@ static void execute_command(gchar *cmd)
 
 static void *worker_func(void *data)
 {
-	int otime;
+	int otime = -1;
 	int playing;
 	int run = 1;
 	int sessid = xmms_tracking.xmms_session;
-	int prevpos = -1, prevlen = -1;
+	int prevpos = -1;
 	int pos = -1, len = -1;
 	int oldtime = 0;
 	int docmd;
-	int playnotice = 0;
 	metatag_t *meta;
 	char *fname;
 	Formatter *formatter;
 	char *cmdstring = NULL;
 	gchar *temp;
+	int processtrack = 0;
 
 	otime = xmms_remote_get_output_time(sessid);
 
 	while (run)
 	{
-		/* Are we playing right now? */
+		/* Grab some information*/
 		playing = xmms_remote_is_playing(sessid);
-		if (!playing)
-		{
-			prevpos = -1;
-			prevlen = -1;
-		}
-
-		/* Grab information about the current track */
 		pos = xmms_remote_get_playlist_pos(sessid);
 		len = xmms_remote_get_playlist_time(sessid, pos);
+		otime = xmms_remote_get_output_time(sessid);
 
-		/* Some debugging stuff */
-		if (!playing)
+		/* Don't really do *anything* unless we're actually playing */
+		if (playing)
 		{
-			if (!playnotice)
+			/* Check to see if we should start processing */
+			if (pos != prevpos)
 			{
-				fprintf(stderr, "No longer playing at pos %d, prevpos %d, len %d, prevlen %d, otime %d\n", pos, prevpos, len, prevlen, otime);
-				playnotice = 1;
+				/* Also check for a glitch */
+				if (otime > 1000)
+				{
+					fprintf(stderr, "pos %d, len %d (%ds): Glitching, counter at %d\n", pos+1, len, (len/1000), otime);
+					processtrack = 0;
+					pos = -1;
+					len = -1;
+				}
+				else
+				{
+					fprintf(stderr, "pos %d, len %d (%ds): Starting track processing, counter at %d\n", pos+1, len, (len/1000), otime);
+					processtrack = 1;
+					oldtime = otime;
+					prevpos = pos;
+				}
 			}
+
+			/* And now process if we're supposed to */
+			if (processtrack)
+			{
+
+				/* Sanity check - minimum length */
+				if (len < (minimum_len*1000))
+				{
+					fprintf(stderr, "pos %d, len %d (%ds): Song shorter than %d seconds, discarding song.\n", pos+1, len, (len/1000), minimum_len);
+					processtrack = 0;
+				}
+				/* Sanity check - has the user skipped in the track? */
+				else if (otime - oldtime > 5000)
+				{
+					fprintf(stderr, "pos %d, len %d (%ds): No skipping allowed, discarding song (%d -> %d)\n", pos+1, len, (len/1000), oldtime, otime);
+					processtrack = 0;
+				}
+				/* Finally we're ready to see if we should run the command or not */
+				else
+				{
+					/* Are we supposed to run the command yet? */
+					docmd = (otime/1000 > seconds_past) ||
+						(((double)otime/((double)len + 1) * 100) >= percent_done);
+					
+					/* Run the command if needed */
+					if (docmd)
+					{
+						/* This'll make sure we only call it once per track */
+						processtrack = 0;
+
+						/* Run the command */
+						if (cmd_line && strlen(cmd_line) > 0)
+						{
+							/* Get meta information */
+							fname = xmms_remote_get_playlist_file(sessid, pos);
+							meta = metatag_new();
+							get_tag_data(meta, fname, 0);
+
+							/* Get our commandline */
+							formatter = xmms_formatter_new();
+							associate(formatter, 'a', meta->artist);
+							associate(formatter, 't', meta->title);
+							associate(formatter, 'l', meta->album);
+							associate(formatter, 'y', meta->year);
+							associate(formatter, 'g', meta->genre);
+							associate(formatter, 'n', meta->track);
+							temp = g_strdup_printf("%d", len/1000);
+							associate(formatter, 's', temp);
+							g_free(temp);
+							cmdstring = xmms_formatter_format(formatter, cmd_line);
+							xmms_formatter_destroy(formatter);
+
+							/* Run the command */
+							fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);
+							execute_command(cmdstring);
+							g_free(cmdstring);  /* according to song_change.c, this could get freed too early */
+						}
+						else
+						{
+							fprintf(stderr, "Would run the command now, but no command present.\n");
+						}
+					}
+				}
+			}
+
+			/* Update prev vars */
+			prevpos = pos;
+			oldtime = otime;
 		}
 		else
 		{
-			if (playnotice)
-			{
-				fprintf(stderr, "Started playing at pos %d, prevpos %d, len %d, prevlen %d, otime %d\n", pos, prevpos, len, prevlen, otime);
-				playnotice = 0;
-			}
+			/* reset prev vars if we're not playing */
+			prevpos = -1;
+			oldtime = -1;
 		}
 
-		/* Figure out how much time has past */
-		if (otime == -1)
-			otime = xmms_remote_get_output_time(sessid);
-		oldtime = otime;
-		otime = xmms_remote_get_output_time(sessid);
-
-		/* Are we supposed to run the command yet? */
-		docmd = (otime/1000 > seconds_past) ||
-			(((double)otime/((double)len + 1) * 100) >= percent_done);
-
-		/* Sanity check - has the user skipped in the track? */
-		if (otime - oldtime > 5000 && (prevpos != pos && prevlen != len && playing))
-		{
-			/* However, if our prevlen and prevpos are -1, then we weren't playing previously, so just go ahead */
-			if (prevlen != -1 && prevpos != -1)
-			{
-				fprintf(stderr, "No skipping allowed, discarding song.\n");
-				fprintf(stderr, "otime = %d, oldtime = %d\n", otime, oldtime);
-				fprintf(stderr, "prevpos = %d, pos = %d\n", prevpos, pos);
-				fprintf(stderr, "prevlen = %d, len = %d\n", prevlen, len);
-				fprintf(stderr, "playing = %d\n", playing);
-				prevpos = pos;
-				prevlen = len;
-			}
-			else
-			{
-				/* We've encountered some glitch on newer Audacious builds. */
-				fprintf(stderr, "Glitch!  Resetting, we'll see if that helps.\n");
-				prevpos = pos;
-				prevlen = len;
-			}
-		}
-
-		/* Check for minimum length */
-		if (len < (minimum_len*1000) && (prevpos != pos && prevlen != len && playing))
-		{
-			fprintf(stderr, "Song shorter than %d seconds, discarding song.\n", minimum_len);
-			prevpos = pos;
-			prevlen = len;
-		}
-		
-		/* Run the command */
-		if ((pos != prevpos && len != prevlen) && playing && docmd)
-		{
-			/* This'll make sure we only call it once per track */
-			prevpos = pos;
-			prevlen = len;
-
-			/* Run the command */
-			if (cmd_line && strlen(cmd_line) > 0)
-			{
-				/* Get meta information */
-				fname = xmms_remote_get_playlist_file(sessid, pos);
-				meta = metatag_new();
-				get_tag_data(meta, fname, 0);
-
-				/* Get our commandline */
-				formatter = xmms_formatter_new();
-				associate(formatter, 'a', meta->artist);
-				associate(formatter, 't', meta->title);
-				associate(formatter, 'l', meta->album);
-				associate(formatter, 'y', meta->year);
-				associate(formatter, 'g', meta->genre);
-				associate(formatter, 'n', meta->track);
-				temp = g_strdup_printf("%d", len/1000);
-				associate(formatter, 's', temp);
-				g_free(temp);
-				cmdstring = xmms_formatter_format(formatter, cmd_line);
-				xmms_formatter_destroy(formatter);
-
-				/* Run the command */
-				fprintf(stderr, "Second %d, pos %d - Running: %s\n", (otime/1000), pos, cmdstring);
-				execute_command(cmdstring);
-				g_free(cmdstring);  /* according to song_change.c, this could get freed too early */
-			}
-			else
-			{
-				fprintf(stderr, "Would run the command now, but no command present.\n");
-			}
-		}
+		/* Make sure we don't keep going if we've been called off */
 		run = going;
+
+		/* Sleep a bit so we don't bog the system down */
 		usleep(100000);
 	}
 	pthread_exit(NULL);

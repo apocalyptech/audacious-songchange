@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.35 2006/07/13 18:22:23 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.36 2006/09/18 17:53:54 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -208,7 +208,7 @@ static char *escape_shell_chars(char *string)
 	}
 	*out = '\0';
 
-	return wtfescape(wtfescape(escaped));
+	return wtfescape(escaped);
 }
 
 static void associate(Formatter *formatter, char letter, char *data)

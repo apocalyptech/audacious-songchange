@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.4 2005/11/28 18:50:36 pez Exp $
+dnl $Id: configure.in,v 1.5 2007/08/02 16:44:19 pez Exp $
 AC_PREREQ(2.52)
 AC_INIT(libxmms_tracking.c)
 AC_CANONICAL_TARGET([])
@@ -16,90 +16,24 @@ AC_PROG_LIBTOOL
 
 AC_PATH_X
 
-dnl Do we build XMMS?
-
-AC_MSG_CHECKING([if XMMS plugin is to be built])
-AC_ARG_ENABLE([xmms-plugin],
-AC_HELP_STRING([--disable-xmms-plugin],
-              [disable building the XMMS plugin (default behavior is enabled)]),
-[ case "${enableval}" in
- yes)
-  AC_MSG_RESULT(yes)
-  make_xmms=true
-  AM_PATH_GLIB(1.2.2,,
-  [AC_MSG_WARN([*** GLIB >= 1.2.2 not installed - please install first ***])
-    make_xmms=false
-  ])
-  AM_PATH_XMMS(1.2.4,,
-  [AC_MSG_WARN([*** XMMS >= 1.2.4 not installed - please install first ***])
-    make_xmms=false
-  ])
-  ;;
- *)
-  AC_MSG_RESULT(no)
-  make_xmms=false
-  ;;
- esac ],
-[ AC_MSG_RESULT(yes)
-  make_xmms=true
-  AM_PATH_GLIB(1.2.2,,
-  [AC_MSG_WARN([*** GLIB >= 1.2.2 not installed - please install first ***])
-    make_xmms=false
-  ])
-  AM_PATH_XMMS(1.2.4,,
-  [AC_MSG_WARN([*** XMMS >= 1.2.4 not installed - please install first ***])
-    make_xmms=false
-  ])
-])
-AM_CONDITIONAL(MAKE_XMMS, [ test $make_xmms = true ])
-
 dnl Do we build AUD?
-AC_MSG_CHECKING([if AUD plugin is to be built])
-AC_ARG_ENABLE([aud-plugin],
-AC_HELP_STRING([--disable-aud-plugin],
-              [disable building the AUD plugin (default behavior is enabled)]),
-[ case "${enableval}" in
- yes)
-  AC_MSG_RESULT(yes)
-  make_aud=true
-  PKG_CHECK_MODULES(GTK, [glib-2.0 >= 2.4.0 gtk+-2.0 >= 2.4.0],
-    [],
-    [ AC_MSG_WARN([*** GLIB >= 2.4.0 or GTK+ >= 2.4.0 not installed - please install first *** ])
-      make_aud=false
-    ]
-  )
-  PKG_CHECK_MODULES(AUD, [audacious >= 0.1.1],
-    [],
-    [AC_MSG_WARN([*** Audacious >= 0.1.1 not installed - please install first ***])
-      make_aud=false
-    ]
-  )
-  ;;
- *)
-  AC_MSG_RESULT(no)
-  make_aud=false
-  ;;
- esac ],
-[ AC_MSG_RESULT(yes)
-  make_aud=true
-  PKG_CHECK_MODULES(GTK, [glib-2.0 >= 2.4.0 gtk+-2.0 >= 2.4.0],
-    [],
-    [ AC_MSG_WARN([*** GLIB >= 2.4.0 or GTK+ >= 2.4.0 not installed - please install first *** ])
-      make_aud=false
-    ]
-  )
-  PKG_CHECK_MODULES(AUD, [audacious >= 0.1.1],
-    [],
-    [AC_MSG_WARN([*** Audacious >= 0.1.1 not installed - please install first ***])
-      make_aud=false
-    ]
-  )
-])
-AM_CONDITIONAL(MAKE_AUD, [ test $make_aud = true ])
+make_aud=true
+PKG_CHECK_MODULES(GTK, [glib-2.0 >= 2.4.0 gtk+-2.0 >= 2.4.0],
+  [],
+  [ AC_MSG_WARN([*** GLIB >= 2.4.0 or GTK+ >= 2.4.0 not installed - please install first *** ])
+    make_aud=false
+  ]
+)
+PKG_CHECK_MODULES(AUD, [audacious >= 0.1.1],
+  [],
+  [AC_MSG_WARN([*** Audacious >= 0.1.1 not installed - please install first ***])
+    make_aud=false
+  ]
+)
 
 dnl Make sure we're specifying at least one
 
-if test $make_xmms = false -a $make_aud = false; then
+if test $make_aud = false; then
   AC_MSG_ERROR([No media player specified, or none found. Cannot build.])
 fi
 

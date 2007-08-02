@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.36 2006/09/18 17:53:54 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.37 2007/08/02 16:44:19 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -16,13 +16,6 @@
 #include <gtk/gtk.h>
 
 /* Player Includes */
-#ifdef MAKE_XMMS
-#include <xmms/plugin.h>
-#include <xmms/configfile.h>
-#include <xmms/xmmsctrl.h>
-#include <xmms/formatter.h>
-#endif
-#ifdef MAKE_AUD
 #include <audacious/plugin.h>
 #include <audacious/configdb.h>
 #include <audacious/beepctrl.h>
@@ -34,7 +27,6 @@
 #define xmms_cfg_write_string bmp_cfg_db_set_string
 #define xmms_cfg_write_int bmp_cfg_db_set_int
 #define xmms_cfg_free bmp_cfg_db_close
-#endif
 
 /* Local includes */
 #include "config.h"
@@ -91,12 +83,7 @@ static GeneralPlugin xmms_tracking =
 
 GeneralPlugin *get_gplugin_info(void)
 {
-#ifdef MAKE_XMMS
-	xmms_tracking.description = g_strdup_printf("XMMS-Tracking %s", VERSION);
-#endif
-#ifdef MAKE_AUD
 	xmms_tracking.description = g_strdup_printf("Audacious-Tracking %s", VERSION);
-#endif
 	return &xmms_tracking;
 }
 
@@ -146,9 +133,6 @@ static void save_and_close(GtkWidget *w, gpointer data)
 	xmms_cfg_write_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
 	xmms_cfg_write_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
 	xmms_cfg_write_string(cfgfile, CFGCAT, "cmd_line", cmd);
-#ifdef MAKE_XMMS
-	xmms_cfg_write_default_file(cfgfile);
-#endif
 	xmms_cfg_free(cfgfile);
 
 	gtk_widget_destroy(configure_win);
@@ -216,12 +200,12 @@ static void associate(Formatter *formatter, char letter, char *data)
 	char *tmp;
 	if (data == NULL)
 	{
-		xmms_formatter_associate(formatter, letter, "");
+		formatter_associate(formatter, letter, "");
 	}
 	else
 	{
 		tmp = escape_shell_chars(data);
-		xmms_formatter_associate(formatter, letter, tmp);
+		formatter_associate(formatter, letter, tmp);
 		g_free(tmp);
 	}
 }
@@ -334,7 +318,7 @@ static void *worker_func(void *data)
 							get_tag_data(meta, fname, 0);
 
 							/* Get our commandline */
-							formatter = xmms_formatter_new();
+							formatter = formatter_new();
 							associate(formatter, 'a', meta->artist);
 							associate(formatter, 't', meta->title);
 							associate(formatter, 'l', meta->album);
@@ -344,8 +328,8 @@ static void *worker_func(void *data)
 							temp = g_strdup_printf("%d", len/1000);
 							associate(formatter, 's', temp);
 							g_free(temp);
-							cmdstring = xmms_formatter_format(formatter, cmd_line);
-							xmms_formatter_destroy(formatter);
+							cmdstring = formatter_format(formatter, cmd_line);
+							formatter_destroy(formatter);
 
 							/* Run the command */
 							fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);
@@ -436,13 +420,8 @@ static void configure(void)
 	read_config();
 
 	/* Set up the initial window */
-#ifdef MAKE_XMMS
-	configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
-#endif
-#ifdef MAKE_AUD
 	configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint(GTK_WINDOW(configure_win), GDK_WINDOW_TYPE_HINT_DIALOG);
-#endif
 	gtk_window_set_title(GTK_WINDOW(configure_win), "Tracking Information");
 	gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed), &configure_win);
 	gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);

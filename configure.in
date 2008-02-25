@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.5 2007/08/02 16:44:19 pez Exp $
+dnl $Id: configure.in,v 1.6 2008/02/25 16:49:43 pez Exp $
 AC_PREREQ(2.52)
 AC_INIT(libxmms_tracking.c)
 AC_CANONICAL_TARGET([])
@@ -45,7 +45,7 @@ LIBS="$LIBS $GTK_LIBS"
 AC_PATH_X
 AC_PATH_XTRA
 if test x$have_x = xyes; then
-	CFLAGS="$CFLAGS $X_CFLAGS"
+	CFLAGS="$CFLAGS -I/usr/include/dbus-1.0 $X_CFLAGS"
 fi
 
 CPPFLAGS=$CPPFLAGS_save

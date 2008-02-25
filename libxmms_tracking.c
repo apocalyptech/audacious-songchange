@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.37 2007/08/02 16:44:19 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.38 2008/02/25 16:49:43 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -17,16 +17,9 @@
 
 /* Player Includes */
 #include <audacious/plugin.h>
-#include <audacious/configdb.h>
-#include <audacious/beepctrl.h>
-#include <audacious/formatter.h>
-#define ConfigFile ConfigDb
-#define xmms_cfg_open_default_file bmp_cfg_db_open
-#define xmms_cfg_read_string bmp_cfg_db_get_string
-#define xmms_cfg_read_int bmp_cfg_db_get_int
-#define xmms_cfg_write_string bmp_cfg_db_set_string
-#define xmms_cfg_write_int bmp_cfg_db_set_int
-#define xmms_cfg_free bmp_cfg_db_close
+/*#include <audacious/configdb.h>*/
+/*#include <audacious/audctrl.h>*/
+/*#include <audacious/formatter.h>*/
 
 /* Local includes */
 #include "config.h"
@@ -69,16 +62,25 @@ static pthread_t pt_worker;
 /* Control variable for thread */
 static int going;
 
+/*
 static GeneralPlugin xmms_tracking =
 {
-	NULL,		/* handle */
-	NULL,		/* filename */
-	-1,		/* xmms_session */
-	NULL,		/* description */
+	NULL,		// handle
+	NULL,		// filename
+	-1,		// xmms_session
+	NULL,		// description
 	init,
 	NULL,
 	configure,
 	cleanup,
+};
+*/
+static GeneralPlugin xmms_tracking =
+{
+    .description = "Enhanced Song Change",
+    .init = init,
+    .configure = configure,
+    .cleanup = cleanup
 };
 
 GeneralPlugin *get_gplugin_info(void)
@@ -122,18 +124,18 @@ static void save_and_close(GtkWidget *w, gpointer data)
 	char *minlen;
 	char *cmd;
 
-	ConfigFile *cfgfile = xmms_cfg_open_default_file();
+	ConfigDb *cfgfile = aud_cfg_db_open();
 
 	percent = gtk_entry_get_text(GTK_ENTRY(percent_entry));
 	seconds = gtk_entry_get_text(GTK_ENTRY(seconds_entry));
 	minlen = gtk_entry_get_text(GTK_ENTRY(minimum_entry));
 	cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
 
-	xmms_cfg_write_int(cfgfile, CFGCAT, "percent_done", atoi(percent));
-	xmms_cfg_write_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
-	xmms_cfg_write_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
-	xmms_cfg_write_string(cfgfile, CFGCAT, "cmd_line", cmd);
-	xmms_cfg_free(cfgfile);
+	aud_cfg_db_set_int(cfgfile, CFGCAT, "percent_done", atoi(percent));
+	aud_cfg_db_set_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
+	aud_cfg_db_set_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
+	aud_cfg_db_set_string(cfgfile, CFGCAT, "cmd_line", cmd);
+	aud_cfg_db_close(cfgfile);
 
 	gtk_widget_destroy(configure_win);
 }
@@ -200,12 +202,12 @@ static void associate(Formatter *formatter, char letter, char *data)
 	char *tmp;
 	if (data == NULL)
 	{
-		formatter_associate(formatter, letter, "");
+		aud_formatter_associate(formatter, letter, "");
 	}
 	else
 	{
 		tmp = escape_shell_chars(data);
-		formatter_associate(formatter, letter, tmp);
+		aud_formatter_associate(formatter, letter, tmp);
 		g_free(tmp);
 	}
 }
@@ -233,11 +235,11 @@ static void execute_command(gchar *cmd)
 static void *worker_func(void *data)
 {
 	int otime = -1;
-	int playing;
+	gboolean playing;
 	int run = 1;
-	int sessid = xmms_tracking.xmms_session;
 	int prevpos = -1;
-	int pos = -1, len = -1;
+	int pos = -1;
+    int len = -1;
 	int oldtime = 0;
 	int docmd;
 	metatag_t *meta;
@@ -246,16 +248,17 @@ static void *worker_func(void *data)
 	char *cmdstring = NULL;
 	gchar *temp;
 	int processtrack = 0;
+    Playlist *playlist = aud_playlist_get_active();
 
-	otime = xmms_remote_get_output_time(sessid);
+	otime = audacious_drct_get_time();
 
 	while (run)
 	{
 		/* Grab some information*/
-		playing = xmms_remote_is_playing(sessid);
-		pos = xmms_remote_get_playlist_pos(sessid);
-		len = xmms_remote_get_playlist_time(sessid, pos);
-		otime = xmms_remote_get_output_time(sessid);
+		playing = audacious_drct_get_playing();
+		pos = aud_playlist_get_position(playlist);
+		len = aud_playlist_get_current_length(playlist);
+		otime = audacious_drct_get_time();
 
 		/* Don't really do *anything* unless we're actually playing */
 		if (playing)
@@ -313,12 +316,12 @@ static void *worker_func(void *data)
 						if (cmd_line && strlen(cmd_line) > 0)
 						{
 							/* Get meta information */
-							fname = xmms_remote_get_playlist_file(sessid, pos);
+							fname = g_filename_from_uri(aud_playlist_get_filename(playlist, pos), NULL, NULL);
 							meta = metatag_new();
 							get_tag_data(meta, fname, 0);
 
 							/* Get our commandline */
-							formatter = formatter_new();
+							formatter = aud_formatter_new();
 							associate(formatter, 'a', meta->artist);
 							associate(formatter, 't', meta->title);
 							associate(formatter, 'l', meta->album);
@@ -328,8 +331,8 @@ static void *worker_func(void *data)
 							temp = g_strdup_printf("%d", len/1000);
 							associate(formatter, 's', temp);
 							g_free(temp);
-							cmdstring = formatter_format(formatter, cmd_line);
-							formatter_destroy(formatter);
+							cmdstring = aud_formatter_format(formatter, cmd_line);
+							aud_formatter_destroy(formatter);
 
 							/* Run the command */
 							fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);
@@ -512,18 +515,18 @@ static void configure(void)
 
 static void read_config(void)
 {
-	ConfigFile *cfgfile;
+	ConfigDb *cfgfile;
 
 	g_free(cmd_line);
 	cmd_line = NULL;
 
-	if ((cfgfile = xmms_cfg_open_default_file()) != NULL)
+	if ((cfgfile = aud_cfg_db_open()) != NULL)
 	{
-		xmms_cfg_read_int(cfgfile, CFGCAT, "percent_done", &percent_done);
-		xmms_cfg_read_int(cfgfile, CFGCAT, "seconds_past", &seconds_past);
-		xmms_cfg_read_int(cfgfile, CFGCAT, "minimum_len", &minimum_len);
-		xmms_cfg_read_string(cfgfile, CFGCAT, "cmd_line", &cmd_line);
-		xmms_cfg_free(cfgfile);
+		aud_cfg_db_get_int(cfgfile, CFGCAT, "percent_done", &percent_done);
+		aud_cfg_db_get_int(cfgfile, CFGCAT, "seconds_past", &seconds_past);
+		aud_cfg_db_get_int(cfgfile, CFGCAT, "minimum_len", &minimum_len);
+		aud_cfg_db_get_string(cfgfile, CFGCAT, "cmd_line", &cmd_line);
+		aud_cfg_db_close(cfgfile);
 	}
 
 	if (percent_done == -1)
@@ -541,3 +544,6 @@ static void read_config(void)
 		minimum_len = DEFAULT_MINIMUM;
 	}
 }
+
+GeneralPlugin *tracking_gplist[] = { &xmms_tracking, NULL };
+DECLARE_PLUGIN(tracking, NULL, NULL, NULL, NULL, NULL, tracking_gplist, NULL, NULL);

@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.39 2008/02/26 18:19:11 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.40 2008/02/26 18:20:50 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -64,14 +64,14 @@ static int going;
 /*
 static GeneralPlugin xmms_tracking =
 {
-	NULL,		// handle
-	NULL,		// filename
-	-1,		// xmms_session
-	NULL,		// description
-	init,
-	NULL,
-	configure,
-	cleanup,
+    NULL,       // handle
+    NULL,       // filename
+    -1,     // xmms_session
+    NULL,       // description
+    init,
+    NULL,
+    configure,
+    cleanup,
 };
 */
 static GeneralPlugin xmms_tracking =
@@ -84,59 +84,59 @@ static GeneralPlugin xmms_tracking =
 
 GeneralPlugin *get_gplugin_info(void)
 {
-	xmms_tracking.description = g_strdup_printf("Audacious-Tracking %s", VERSION);
-	return &xmms_tracking;
+    xmms_tracking.description = g_strdup_printf("Audacious-Tracking %s", VERSION);
+    return &xmms_tracking;
 }
 
 static void init(void)
 {
-	read_config();
-	going = 1;
+    read_config();
+    going = 1;
 
-	fprintf(stderr, "Plugin init\n");
-	if (pthread_create(&pt_worker, NULL, worker_func, NULL))
-	{
-		return;
-	}
+    fprintf(stderr, "Plugin init\n");
+    if (pthread_create(&pt_worker, NULL, worker_func, NULL))
+    {
+        return;
+    }
 }
 
 static void cleanup(void)
 {
-	fprintf(stderr, "In cleanup\n");
-	void *dummy;
+    fprintf(stderr, "In cleanup\n");
+    void *dummy;
 
-	if (cmd_line)
-		g_free(cmd_line);
-	cmd_line = NULL;
+    if (cmd_line)
+        g_free(cmd_line);
+    cmd_line = NULL;
 
-	if (going)
-	{
-		going = 0;
-		pthread_join(pt_worker, &dummy);
-	}
+    if (going)
+    {
+        going = 0;
+        pthread_join(pt_worker, &dummy);
+    }
 }
 
 static void save_and_close(GtkWidget *w, gpointer data)
 {
-	char *percent;
-	char *seconds;
-	char *minlen;
-	char *cmd;
+    char *percent;
+    char *seconds;
+    char *minlen;
+    char *cmd;
 
-	ConfigDb *cfgfile = aud_cfg_db_open();
+    ConfigDb *cfgfile = aud_cfg_db_open();
 
-	percent = gtk_entry_get_text(GTK_ENTRY(percent_entry));
-	seconds = gtk_entry_get_text(GTK_ENTRY(seconds_entry));
-	minlen = gtk_entry_get_text(GTK_ENTRY(minimum_entry));
-	cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
+    percent = gtk_entry_get_text(GTK_ENTRY(percent_entry));
+    seconds = gtk_entry_get_text(GTK_ENTRY(seconds_entry));
+    minlen = gtk_entry_get_text(GTK_ENTRY(minimum_entry));
+    cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
 
-	aud_cfg_db_set_int(cfgfile, CFGCAT, "percent_done", atoi(percent));
-	aud_cfg_db_set_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
-	aud_cfg_db_set_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
-	aud_cfg_db_set_string(cfgfile, CFGCAT, "cmd_line", cmd);
-	aud_cfg_db_close(cfgfile);
+    aud_cfg_db_set_int(cfgfile, CFGCAT, "percent_done", atoi(percent));
+    aud_cfg_db_set_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
+    aud_cfg_db_set_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
+    aud_cfg_db_set_string(cfgfile, CFGCAT, "cmd_line", cmd);
+    aud_cfg_db_close(cfgfile);
 
-	gtk_widget_destroy(configure_win);
+    gtk_widget_destroy(configure_win);
 }
 
 /*
@@ -144,405 +144,405 @@ static void save_and_close(GtkWidget *w, gpointer data)
  */
 static char *wtfescape(char *string)
 {
-	const gchar *special = "$`"; /* chars to escape */
-	char *in = string, *out;
-	char *escaped;
-	int num = 0;
+    const gchar *special = "$`"; /* chars to escape */
+    char *in = string, *out;
+    char *escaped;
+    int num = 0;
 
-	while (*in != '\0')
-		if (strchr(special, *in++))
-			num++;
+    while (*in != '\0')
+        if (strchr(special, *in++))
+            num++;
 
-	escaped = g_malloc(strlen(string) + num + 1);
+    escaped = g_malloc(strlen(string) + num + 1);
 
-	in = string;
-	out = escaped;
-	
-	while (*in != '\0')
-	{
-		if (strchr(special, *in))
-			*out++ = '\\';
-		*out++ = *in++;
-	}
-	*out = '\0';
+    in = string;
+    out = escaped;
+    
+    while (*in != '\0')
+    {
+        if (strchr(special, *in))
+            *out++ = '\\';
+        *out++ = *in++;
+    }
+    *out = '\0';
 
-	return escaped;
+    return escaped;
 }
 
 static char *escape_shell_chars(char *string)
 {
-	const gchar *special = "$`\"\\"; /* chars to escape */
-	char *in = string, *out;
-	char *escaped;
-	int num = 0;
+    const gchar *special = "$`\"\\"; /* chars to escape */
+    char *in = string, *out;
+    char *escaped;
+    int num = 0;
 
-	while (*in != '\0')
-		if (strchr(special, *in++))
-			num++;
+    while (*in != '\0')
+        if (strchr(special, *in++))
+            num++;
 
-	escaped = g_malloc(strlen(string) + num + 1);
+    escaped = g_malloc(strlen(string) + num + 1);
 
-	in = string;
-	out = escaped;
-	
-	while (*in != '\0')
-	{
-		if (strchr(special, *in))
-			*out++ = '\\';
-		*out++ = *in++;
-	}
-	*out = '\0';
+    in = string;
+    out = escaped;
+    
+    while (*in != '\0')
+    {
+        if (strchr(special, *in))
+            *out++ = '\\';
+        *out++ = *in++;
+    }
+    *out = '\0';
 
-	return wtfescape(escaped);
+    return wtfescape(escaped);
 }
 
 static void associate(Formatter *formatter, char letter, char *data)
 {
-	char *tmp;
-	if (data == NULL)
-	{
-		aud_formatter_associate(formatter, letter, "");
-	}
-	else
-	{
-		tmp = escape_shell_chars(data);
-		aud_formatter_associate(formatter, letter, tmp);
-		g_free(tmp);
-	}
+    char *tmp;
+    if (data == NULL)
+    {
+        aud_formatter_associate(formatter, letter, "");
+    }
+    else
+    {
+        tmp = escape_shell_chars(data);
+        aud_formatter_associate(formatter, letter, tmp);
+        g_free(tmp);
+    }
 }
 
 static void bury_child(int signal)
 {
-	waitpid(-1, NULL, WNOHANG);
+    waitpid(-1, NULL, WNOHANG);
 }
 
 static void execute_command(gchar *cmd)
 {
-	gchar *argv[4] = {"/bin/sh", "-c", NULL, NULL};
-	gint i;
-	argv[2] = cmd;
-	signal(SIGCHLD, bury_child);
-	if (fork() == 0)
-	{
-		/* We don't want this process to hog the audio device etc */
-		for (i=3; i<255; i++)
-			close(i);
-		execv("/bin/sh", argv);
-	}
+    gchar *argv[4] = {"/bin/sh", "-c", NULL, NULL};
+    gint i;
+    argv[2] = cmd;
+    signal(SIGCHLD, bury_child);
+    if (fork() == 0)
+    {
+        /* We don't want this process to hog the audio device etc */
+        for (i=3; i<255; i++)
+            close(i);
+        execv("/bin/sh", argv);
+    }
 }
 
 static void *worker_func(void *data)
 {
-	int otime = -1;
-	gboolean playing;
-	int run = 1;
-	int prevpos = -1;
-	int pos = -1;
+    int otime = -1;
+    gboolean playing;
+    int run = 1;
+    int prevpos = -1;
+    int pos = -1;
     int len = -1;
-	int oldtime = 0;
-	int docmd;
-	metatag_t *meta;
-	char *fname;
-	Formatter *formatter;
-	char *cmdstring = NULL;
-	gchar *temp;
-	int processtrack = 0;
+    int oldtime = 0;
+    int docmd;
+    metatag_t *meta;
+    char *fname;
+    Formatter *formatter;
+    char *cmdstring = NULL;
+    gchar *temp;
+    int processtrack = 0;
     Playlist *playlist;
 
-	while (run)
-	{
-		/* See if we're playing */
-		playing = audacious_drct_get_playing();
+    while (run)
+    {
+        /* See if we're playing */
+        playing = audacious_drct_get_playing();
 
-		/* Don't really do *anything* unless we're actually playing */
-		if (playing)
-		{
+        /* Don't really do *anything* unless we're actually playing */
+        if (playing)
+        {
             /* NOW grab this info */
             playlist = aud_playlist_get_active();
             pos = aud_playlist_get_position(playlist);
             len = aud_playlist_get_current_length(playlist);
             otime = audacious_drct_get_time();
 
-			/* Check to see if we should start processing */
-			if (pos != prevpos)
-			{
-				/* Also check for a glitch */
-				if (otime > 1000)
-				{
-					fprintf(stderr, "pos %d, len %d (%ds): Glitching, counter at %d\n", pos+1, len, (len/1000), otime);
-					processtrack = 0;
-					pos = -1;
-					len = -1;
-				}
-				else
-				{
-					fprintf(stderr, "pos %d, len %d (%ds): Starting track processing, counter at %d\n", pos+1, len, (len/1000), otime);
-					processtrack = 1;
-					oldtime = otime;
-					prevpos = pos;
-				}
-			}
+            /* Check to see if we should start processing */
+            if (pos != prevpos)
+            {
+                /* Also check for a glitch */
+                if (otime > 1000)
+                {
+                    fprintf(stderr, "pos %d, len %d (%ds): Glitching, counter at %d\n", pos+1, len, (len/1000), otime);
+                    processtrack = 0;
+                    pos = -1;
+                    len = -1;
+                }
+                else
+                {
+                    fprintf(stderr, "pos %d, len %d (%ds): Starting track processing, counter at %d\n", pos+1, len, (len/1000), otime);
+                    processtrack = 1;
+                    oldtime = otime;
+                    prevpos = pos;
+                }
+            }
 
-			/* And now process if we're supposed to */
-			if (processtrack)
-			{
+            /* And now process if we're supposed to */
+            if (processtrack)
+            {
 
-				/* Sanity check - minimum length */
-				if (len < (minimum_len*1000))
-				{
-					fprintf(stderr, "pos %d, len %d (%ds): Song shorter than %d seconds, discarding song.\n", pos+1, len, (len/1000), minimum_len);
-					processtrack = 0;
-				}
-				/* Sanity check - has the user skipped in the track? */
-				else if (otime - oldtime > 5000)
-				{
-					fprintf(stderr, "pos %d, len %d (%ds): No skipping allowed, discarding song (%d -> %d)\n", pos+1, len, (len/1000), oldtime, otime);
-					processtrack = 0;
-				}
-				/* Finally we're ready to see if we should run the command or not */
-				else
-				{
-					/* Are we supposed to run the command yet? */
-					docmd = (otime/1000 > seconds_past) ||
-						(((double)otime/((double)len + 1) * 100) >= percent_done);
-					
-					/* Run the command if needed */
-					if (docmd)
-					{
-						/* This'll make sure we only call it once per track */
-						processtrack = 0;
+                /* Sanity check - minimum length */
+                if (len < (minimum_len*1000))
+                {
+                    fprintf(stderr, "pos %d, len %d (%ds): Song shorter than %d seconds, discarding song.\n", pos+1, len, (len/1000), minimum_len);
+                    processtrack = 0;
+                }
+                /* Sanity check - has the user skipped in the track? */
+                else if (otime - oldtime > 5000)
+                {
+                    fprintf(stderr, "pos %d, len %d (%ds): No skipping allowed, discarding song (%d -> %d)\n", pos+1, len, (len/1000), oldtime, otime);
+                    processtrack = 0;
+                }
+                /* Finally we're ready to see if we should run the command or not */
+                else
+                {
+                    /* Are we supposed to run the command yet? */
+                    docmd = (otime/1000 > seconds_past) ||
+                        (((double)otime/((double)len + 1) * 100) >= percent_done);
+                    
+                    /* Run the command if needed */
+                    if (docmd)
+                    {
+                        /* This'll make sure we only call it once per track */
+                        processtrack = 0;
 
-						/* Run the command */
-						if (cmd_line && strlen(cmd_line) > 0)
-						{
-							/* Get meta information */
-							fname = g_filename_from_uri(aud_playlist_get_filename(playlist, pos), NULL, NULL);
-							meta = metatag_new();
-							get_tag_data(meta, fname, 0);
+                        /* Run the command */
+                        if (cmd_line && strlen(cmd_line) > 0)
+                        {
+                            /* Get meta information */
+                            fname = g_filename_from_uri(aud_playlist_get_filename(playlist, pos), NULL, NULL);
+                            meta = metatag_new();
+                            get_tag_data(meta, fname, 0);
 
-							/* Get our commandline */
-							formatter = aud_formatter_new();
-							associate(formatter, 'a', (char *)meta->artist);
-							associate(formatter, 't', (char *)meta->title);
-							associate(formatter, 'l', (char *)meta->album);
-							associate(formatter, 'y', (char *)meta->year);
-							associate(formatter, 'g', (char *)meta->genre);
-							associate(formatter, 'n', (char *)meta->track);
-							temp = g_strdup_printf("%d", len/1000);
-							associate(formatter, 's', (char *)temp);
-							g_free(temp);
-							cmdstring = aud_formatter_format(formatter, cmd_line);
-							aud_formatter_destroy(formatter);
+                            /* Get our commandline */
+                            formatter = aud_formatter_new();
+                            associate(formatter, 'a', (char *)meta->artist);
+                            associate(formatter, 't', (char *)meta->title);
+                            associate(formatter, 'l', (char *)meta->album);
+                            associate(formatter, 'y', (char *)meta->year);
+                            associate(formatter, 'g', (char *)meta->genre);
+                            associate(formatter, 'n', (char *)meta->track);
+                            temp = g_strdup_printf("%d", len/1000);
+                            associate(formatter, 's', (char *)temp);
+                            g_free(temp);
+                            cmdstring = aud_formatter_format(formatter, cmd_line);
+                            aud_formatter_destroy(formatter);
 
-							/* Run the command */
-							fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);
-							execute_command(cmdstring);
-							g_free(cmdstring);  /* according to song_change.c, this could get freed too early */
-						}
-						else
-						{
-							fprintf(stderr, "Would run the command now, but no command present.\n");
-						}
-					}
-				}
-			}
+                            /* Run the command */
+                            fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);
+                            execute_command(cmdstring);
+                            g_free(cmdstring);  /* according to song_change.c, this could get freed too early */
+                        }
+                        else
+                        {
+                            fprintf(stderr, "Would run the command now, but no command present.\n");
+                        }
+                    }
+                }
+            }
 
-			/* Update prev vars */
-			prevpos = pos;
-			oldtime = otime;
-		}
-		else
-		{
-			/* reset prev vars if we're not playing */
-			prevpos = -1;
-			oldtime = -1;
+            /* Update prev vars */
+            prevpos = pos;
+            oldtime = otime;
+        }
+        else
+        {
+            /* reset prev vars if we're not playing */
+            prevpos = -1;
+            oldtime = -1;
 
-			/* Notify on stderr if we were processing */
-			if (processtrack)
-			{
-				processtrack = 0;
-				fprintf(stderr, "pos %d, len %d (%ds): Stopped track processing\n", pos+1, len, (len/1000));
-			}
-		}
+            /* Notify on stderr if we were processing */
+            if (processtrack)
+            {
+                processtrack = 0;
+                fprintf(stderr, "pos %d, len %d (%ds): Stopped track processing\n", pos+1, len, (len/1000));
+            }
+        }
 
-		/* Make sure we don't keep going if we've been called off */
-		run = going;
+        /* Make sure we don't keep going if we've been called off */
+        run = going;
 
-		/* Sleep a bit so we don't bog the system down */
-		usleep(100000);
-	}
-	pthread_exit(NULL);
+        /* Sleep a bit so we don't bog the system down */
+        usleep(100000);
+    }
+    pthread_exit(NULL);
 }
 
 static void configure_ok_cb(GtkWidget *w, gpointer data)
 {
-	char *cmd;
+    char *cmd;
 
-	cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
-	/* Theoretically do some checking on cmd here */
-	save_and_close(NULL, NULL);
+    cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
+    /* Theoretically do some checking on cmd here */
+    save_and_close(NULL, NULL);
 }
 
 static GtkWidget *labelbox_int(GtkWidget *container_box, gchar *text, gint data, GtkWidget *entrybox)
 {
-	GtkWidget *myhbox;
-	GtkWidget *mylabel;
-	gchar *temp;
+    GtkWidget *myhbox;
+    GtkWidget *mylabel;
+    gchar *temp;
 
-	/* Label */
-	myhbox = gtk_hbox_new(FALSE, 5);
-	gtk_box_pack_start(GTK_BOX(container_box), myhbox, FALSE, FALSE, 0);
-	mylabel = gtk_label_new(text);
-	gtk_box_pack_start(GTK_BOX(myhbox), mylabel, FALSE, FALSE, 0);
+    /* Label */
+    myhbox = gtk_hbox_new(FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(container_box), myhbox, FALSE, FALSE, 0);
+    mylabel = gtk_label_new(text);
+    gtk_box_pack_start(GTK_BOX(myhbox), mylabel, FALSE, FALSE, 0);
 
-	/* Entry box */
-	entrybox = gtk_entry_new();
-	if (percent_done)
-	{
-		temp = g_strdup_printf("%d", data);
-		gtk_entry_set_text(GTK_ENTRY(entrybox), temp);
-		g_free(temp);
-	}
-	gtk_widget_set_usize(entrybox, 200, -1);
-	gtk_box_pack_start(GTK_BOX(myhbox), entrybox, FALSE, FALSE, 0);
+    /* Entry box */
+    entrybox = gtk_entry_new();
+    if (percent_done)
+    {
+        temp = g_strdup_printf("%d", data);
+        gtk_entry_set_text(GTK_ENTRY(entrybox), temp);
+        g_free(temp);
+    }
+    gtk_widget_set_usize(entrybox, 200, -1);
+    gtk_box_pack_start(GTK_BOX(myhbox), entrybox, FALSE, FALSE, 0);
 
-	/* Return the new entrybox */
-	return entrybox;
+    /* Return the new entrybox */
+    return entrybox;
 }
 
 static void configure(void)
 {
-	GtkWidget *condition_frame, *condition_vbox, *condition_desc;
-	GtkWidget *cmd_hbox, *cmd_label, *cmd_frame, *cmd_vbox, *cmd_desc;
-	GtkWidget *configure_bbox, *configure_ok, *configure_cancel;
-	gchar *temp;
+    GtkWidget *condition_frame, *condition_vbox, *condition_desc;
+    GtkWidget *cmd_hbox, *cmd_label, *cmd_frame, *cmd_vbox, *cmd_desc;
+    GtkWidget *configure_bbox, *configure_ok, *configure_cancel;
+    gchar *temp;
 
-	if (configure_win)
-		return;
+    if (configure_win)
+        return;
 
-	read_config();
+    read_config();
 
-	/* Set up the initial window */
-	configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_type_hint(GTK_WINDOW(configure_win), GDK_WINDOW_TYPE_HINT_DIALOG);
-	gtk_window_set_title(GTK_WINDOW(configure_win), "Tracking Information");
-	gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed), &configure_win);
-	gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
-	gtk_window_set_default_size(GTK_WINDOW(configure_win), 400, 300);
+    /* Set up the initial window */
+    configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_type_hint(GTK_WINDOW(configure_win), GDK_WINDOW_TYPE_HINT_DIALOG);
+    gtk_window_set_title(GTK_WINDOW(configure_win), "Tracking Information");
+    gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed), &configure_win);
+    gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
+    gtk_window_set_default_size(GTK_WINDOW(configure_win), 400, 300);
 
-	/* Set up the vbox to put things in */
-	configure_vbox = gtk_vbox_new(FALSE, 10);
-	gtk_container_add(GTK_CONTAINER(configure_win), configure_vbox);
+    /* Set up the vbox to put things in */
+    configure_vbox = gtk_vbox_new(FALSE, 10);
+    gtk_container_add(GTK_CONTAINER(configure_win), configure_vbox);
 
-	/* Container for Conditional Parameters */
-	condition_frame = gtk_frame_new("Conditions");
-	gtk_box_pack_start(GTK_BOX(configure_vbox), condition_frame, FALSE, FALSE, 0);
-	condition_vbox = gtk_vbox_new(FALSE, 10);
-	gtk_container_set_border_width(GTK_CONTAINER(condition_vbox), 5);
-	gtk_container_add(GTK_CONTAINER(condition_frame), condition_vbox);
+    /* Container for Conditional Parameters */
+    condition_frame = gtk_frame_new("Conditions");
+    gtk_box_pack_start(GTK_BOX(configure_vbox), condition_frame, FALSE, FALSE, 0);
+    condition_vbox = gtk_vbox_new(FALSE, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(condition_vbox), 5);
+    gtk_container_add(GTK_CONTAINER(condition_frame), condition_vbox);
 
-	/* Container for Command indicator */
-	cmd_frame = gtk_frame_new("Command");
-	gtk_box_pack_start(GTK_BOX(configure_vbox), cmd_frame, FALSE, FALSE, 0);
-	cmd_vbox = gtk_vbox_new(FALSE, 10);
-	gtk_container_set_border_width(GTK_CONTAINER(cmd_vbox), 5);
-	gtk_container_add(GTK_CONTAINER(cmd_frame), cmd_vbox);
+    /* Container for Command indicator */
+    cmd_frame = gtk_frame_new("Command");
+    gtk_box_pack_start(GTK_BOX(configure_vbox), cmd_frame, FALSE, FALSE, 0);
+    cmd_vbox = gtk_vbox_new(FALSE, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(cmd_vbox), 5);
+    gtk_container_add(GTK_CONTAINER(cmd_frame), cmd_vbox);
 
-	/* Description for Conditional Parameters */
-	temp = g_strdup_printf("The command will be run when one of the following "
-			"conditions are met, whichever triggers first.  Defaults are "
-			"to trigger at either 50%% done or 240 seconds past.  Also, "
-			"the command will not trigger unless the song is at least the "
-			"specified number of seconds long.");
-	condition_desc = gtk_label_new(temp);
-	g_free(temp);
-	gtk_label_set_justify(GTK_LABEL(condition_desc), GTK_JUSTIFY_FILL);
-	gtk_misc_set_alignment(GTK_MISC(condition_desc), 0, 0.5);
-	gtk_box_pack_start(GTK_BOX(condition_vbox), condition_desc, TRUE, TRUE, 0);
-	gtk_label_set_line_wrap(GTK_LABEL(condition_desc), TRUE);
+    /* Description for Conditional Parameters */
+    temp = g_strdup_printf("The command will be run when one of the following "
+            "conditions are met, whichever triggers first.  Defaults are "
+            "to trigger at either 50%% done or 240 seconds past.  Also, "
+            "the command will not trigger unless the song is at least the "
+            "specified number of seconds long.");
+    condition_desc = gtk_label_new(temp);
+    g_free(temp);
+    gtk_label_set_justify(GTK_LABEL(condition_desc), GTK_JUSTIFY_FILL);
+    gtk_misc_set_alignment(GTK_MISC(condition_desc), 0, 0.5);
+    gtk_box_pack_start(GTK_BOX(condition_vbox), condition_desc, TRUE, TRUE, 0);
+    gtk_label_set_line_wrap(GTK_LABEL(condition_desc), TRUE);
 
-	/* Various Label Boxes */
-	percent_entry = labelbox_int(condition_vbox, "Percent Done:", percent_done, percent_entry);
-	seconds_entry = labelbox_int(condition_vbox, "Seconds Past:", seconds_past, seconds_entry);
-	minimum_entry = labelbox_int(condition_vbox, "Minimum Length:", minimum_len, minimum_entry);
+    /* Various Label Boxes */
+    percent_entry = labelbox_int(condition_vbox, "Percent Done:", percent_done, percent_entry);
+    seconds_entry = labelbox_int(condition_vbox, "Seconds Past:", seconds_past, seconds_entry);
+    minimum_entry = labelbox_int(condition_vbox, "Minimum Length:", minimum_len, minimum_entry);
 
-	/* Description for Command */
-	temp = g_strdup_printf("Run this command.");
-	cmd_desc = gtk_label_new(temp);
-	g_free(temp);
-	gtk_label_set_justify(GTK_LABEL(cmd_desc), GTK_JUSTIFY_LEFT);
-	gtk_misc_set_alignment(GTK_MISC(cmd_desc), 0, 0.5);
-	gtk_box_pack_start(GTK_BOX(cmd_vbox), cmd_desc, FALSE, FALSE, 0);
-	gtk_label_set_line_wrap(GTK_LABEL(cmd_desc), TRUE);
+    /* Description for Command */
+    temp = g_strdup_printf("Run this command.");
+    cmd_desc = gtk_label_new(temp);
+    g_free(temp);
+    gtk_label_set_justify(GTK_LABEL(cmd_desc), GTK_JUSTIFY_LEFT);
+    gtk_misc_set_alignment(GTK_MISC(cmd_desc), 0, 0.5);
+    gtk_box_pack_start(GTK_BOX(cmd_vbox), cmd_desc, FALSE, FALSE, 0);
+    gtk_label_set_line_wrap(GTK_LABEL(cmd_desc), TRUE);
 
-	/* Label for Command */
-	cmd_hbox = gtk_hbox_new(FALSE, 5);
-	gtk_box_pack_start(GTK_BOX(cmd_vbox), cmd_hbox, FALSE, FALSE, 0);
-	cmd_label = gtk_label_new("Command Line:");
-	gtk_box_pack_start(GTK_BOX(cmd_hbox), cmd_label, FALSE, FALSE, 0);
+    /* Label for Command */
+    cmd_hbox = gtk_hbox_new(FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(cmd_vbox), cmd_hbox, FALSE, FALSE, 0);
+    cmd_label = gtk_label_new("Command Line:");
+    gtk_box_pack_start(GTK_BOX(cmd_hbox), cmd_label, FALSE, FALSE, 0);
 
-	/* Entry box for Command */
-	cmd_entry = gtk_entry_new();
-	if (cmd_line)
-		gtk_entry_set_text(GTK_ENTRY(cmd_entry), cmd_line);
-	gtk_widget_set_usize(cmd_entry, 200, -1);
-	gtk_box_pack_start(GTK_BOX(cmd_hbox), cmd_entry, TRUE, TRUE, 0);
+    /* Entry box for Command */
+    cmd_entry = gtk_entry_new();
+    if (cmd_line)
+        gtk_entry_set_text(GTK_ENTRY(cmd_entry), cmd_line);
+    gtk_widget_set_usize(cmd_entry, 200, -1);
+    gtk_box_pack_start(GTK_BOX(cmd_hbox), cmd_entry, TRUE, TRUE, 0);
 
-	/*** GOOD FUCKING GOD ***/
+    /*** GOOD FUCKING GOD ***/
 
-	/* Set up area for buttons at the bottom */
-	configure_bbox = gtk_hbutton_box_new();
-	gtk_button_box_set_layout(GTK_BUTTON_BOX(configure_bbox), GTK_BUTTONBOX_END);
-	gtk_button_box_set_spacing(GTK_BUTTON_BOX(configure_bbox), 5);
-	gtk_box_pack_start(GTK_BOX(configure_vbox), configure_bbox, FALSE, FALSE, 0);
+    /* Set up area for buttons at the bottom */
+    configure_bbox = gtk_hbutton_box_new();
+    gtk_button_box_set_layout(GTK_BUTTON_BOX(configure_bbox), GTK_BUTTONBOX_END);
+    gtk_button_box_set_spacing(GTK_BUTTON_BOX(configure_bbox), 5);
+    gtk_box_pack_start(GTK_BOX(configure_vbox), configure_bbox, FALSE, FALSE, 0);
 
-	/* OK button */
-	configure_ok = gtk_button_new_with_label("Ok");
-	gtk_signal_connect(GTK_OBJECT(configure_ok), "clicked", GTK_SIGNAL_FUNC(configure_ok_cb), NULL);
-	GTK_WIDGET_SET_FLAGS(configure_ok, GTK_CAN_DEFAULT);
-	gtk_box_pack_start(GTK_BOX(configure_bbox), configure_ok, TRUE, TRUE, 0);
-	gtk_widget_grab_default(configure_ok);
+    /* OK button */
+    configure_ok = gtk_button_new_with_label("Ok");
+    gtk_signal_connect(GTK_OBJECT(configure_ok), "clicked", GTK_SIGNAL_FUNC(configure_ok_cb), NULL);
+    GTK_WIDGET_SET_FLAGS(configure_ok, GTK_CAN_DEFAULT);
+    gtk_box_pack_start(GTK_BOX(configure_bbox), configure_ok, TRUE, TRUE, 0);
+    gtk_widget_grab_default(configure_ok);
 
-	/* Cancel button */
-	configure_cancel = gtk_button_new_with_label("Cancel");
-	gtk_signal_connect_object(GTK_OBJECT(configure_cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(configure_win));
-	GTK_WIDGET_SET_FLAGS(configure_cancel, GTK_CAN_DEFAULT);
-	gtk_box_pack_start(GTK_BOX(configure_bbox), configure_cancel, TRUE, TRUE, 0);
+    /* Cancel button */
+    configure_cancel = gtk_button_new_with_label("Cancel");
+    gtk_signal_connect_object(GTK_OBJECT(configure_cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(configure_win));
+    GTK_WIDGET_SET_FLAGS(configure_cancel, GTK_CAN_DEFAULT);
+    gtk_box_pack_start(GTK_BOX(configure_bbox), configure_cancel, TRUE, TRUE, 0);
 
-	/* ... aaaand we're done */
-	gtk_widget_show_all(configure_win);
+    /* ... aaaand we're done */
+    gtk_widget_show_all(configure_win);
 }
 
 static void read_config(void)
 {
-	ConfigDb *cfgfile;
+    ConfigDb *cfgfile;
 
-	g_free(cmd_line);
-	cmd_line = NULL;
+    g_free(cmd_line);
+    cmd_line = NULL;
 
-	if ((cfgfile = aud_cfg_db_open()) != NULL)
-	{
-		aud_cfg_db_get_int(cfgfile, CFGCAT, "percent_done", &percent_done);
-		aud_cfg_db_get_int(cfgfile, CFGCAT, "seconds_past", &seconds_past);
-		aud_cfg_db_get_int(cfgfile, CFGCAT, "minimum_len", &minimum_len);
-		aud_cfg_db_get_string(cfgfile, CFGCAT, "cmd_line", &cmd_line);
-		aud_cfg_db_close(cfgfile);
-	}
+    if ((cfgfile = aud_cfg_db_open()) != NULL)
+    {
+        aud_cfg_db_get_int(cfgfile, CFGCAT, "percent_done", &percent_done);
+        aud_cfg_db_get_int(cfgfile, CFGCAT, "seconds_past", &seconds_past);
+        aud_cfg_db_get_int(cfgfile, CFGCAT, "minimum_len", &minimum_len);
+        aud_cfg_db_get_string(cfgfile, CFGCAT, "cmd_line", &cmd_line);
+        aud_cfg_db_close(cfgfile);
+    }
 
-	if (percent_done == -1)
-	{
-		percent_done = DEFAULT_PERCENT;
-	}
+    if (percent_done == -1)
+    {
+        percent_done = DEFAULT_PERCENT;
+    }
 
-	if (seconds_past == -1)
-	{
-		seconds_past = DEFAULT_SECONDS;
-	}
+    if (seconds_past == -1)
+    {
+        seconds_past = DEFAULT_SECONDS;
+    }
 
-	if (minimum_len == -1)
-	{
-		minimum_len = DEFAULT_MINIMUM;
-	}
+    if (minimum_len == -1)
+    {
+        minimum_len = DEFAULT_MINIMUM;
+    }
 }
 
 GeneralPlugin *tracking_gplist[] = { &xmms_tracking, NULL };

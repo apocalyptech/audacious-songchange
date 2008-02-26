@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.38 2008/02/25 16:49:43 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.39 2008/02/26 18:19:11 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 /* Some More Includes */
 #include <sys/types.h>
@@ -248,21 +247,22 @@ static void *worker_func(void *data)
 	char *cmdstring = NULL;
 	gchar *temp;
 	int processtrack = 0;
-    Playlist *playlist = aud_playlist_get_active();
-
-	otime = audacious_drct_get_time();
+    Playlist *playlist;
 
 	while (run)
 	{
-		/* Grab some information*/
+		/* See if we're playing */
 		playing = audacious_drct_get_playing();
-		pos = aud_playlist_get_position(playlist);
-		len = aud_playlist_get_current_length(playlist);
-		otime = audacious_drct_get_time();
 
 		/* Don't really do *anything* unless we're actually playing */
 		if (playing)
 		{
+            /* NOW grab this info */
+            playlist = aud_playlist_get_active();
+            pos = aud_playlist_get_position(playlist);
+            len = aud_playlist_get_current_length(playlist);
+            otime = audacious_drct_get_time();
+
 			/* Check to see if we should start processing */
 			if (pos != prevpos)
 			{
@@ -322,14 +322,14 @@ static void *worker_func(void *data)
 
 							/* Get our commandline */
 							formatter = aud_formatter_new();
-							associate(formatter, 'a', meta->artist);
-							associate(formatter, 't', meta->title);
-							associate(formatter, 'l', meta->album);
-							associate(formatter, 'y', meta->year);
-							associate(formatter, 'g', meta->genre);
-							associate(formatter, 'n', meta->track);
+							associate(formatter, 'a', (char *)meta->artist);
+							associate(formatter, 't', (char *)meta->title);
+							associate(formatter, 'l', (char *)meta->album);
+							associate(formatter, 'y', (char *)meta->year);
+							associate(formatter, 'g', (char *)meta->genre);
+							associate(formatter, 'n', (char *)meta->track);
 							temp = g_strdup_printf("%d", len/1000);
-							associate(formatter, 's', temp);
+							associate(formatter, 's', (char *)temp);
 							g_free(temp);
 							cmdstring = aud_formatter_format(formatter, cmd_line);
 							aud_formatter_destroy(formatter);

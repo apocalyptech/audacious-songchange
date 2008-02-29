@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.40 2008/02/26 18:20:50 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.41 2008/02/29 16:38:55 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -247,6 +247,7 @@ static void *worker_func(void *data)
     char *cmdstring = NULL;
     gchar *temp;
     int processtrack = 0;
+    int checkskip = 0;
     Playlist *playlist;
 
     while (run)
@@ -263,9 +264,24 @@ static void *worker_func(void *data)
             len = aud_playlist_get_current_length(playlist);
             otime = audacious_drct_get_time();
 
+            /* Check to see if we were skipping (so we can recover if we skip back to the beginning) */
+            if (checkskip)
+            {
+                if (otime <= 1000)
+                {
+                    /* Doing this will let us get picked up by the next block */
+                    fprintf(stderr, "pos %d, len %d (%ds): Skip-to-beginning detected, allowing track (at %d)\n", pos+1, len, (len/1000), otime);
+                    prevpos = -1;
+                    checkskip = 0;
+                }
+            }
+
             /* Check to see if we should start processing */
             if (pos != prevpos)
             {
+                /* Our previous skip-check, if any, is no longer valid. */
+                checkskip = 0;
+
                 /* Also check for a glitch */
                 if (otime > 1000)
                 {
@@ -298,6 +314,7 @@ static void *worker_func(void *data)
                 {
                     fprintf(stderr, "pos %d, len %d (%ds): No skipping allowed, discarding song (%d -> %d)\n", pos+1, len, (len/1000), oldtime, otime);
                     processtrack = 0;
+                    checkskip = 1;
                 }
                 /* Finally we're ready to see if we should run the command or not */
                 else

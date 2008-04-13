@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.41 2008/02/29 16:38:55 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.42 2008/04/13 05:31:45 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-/* GTK Includes */
+/* GTK/Glib Includes */
 #include <gtk/gtk.h>
 
 /* Player Includes */
@@ -246,8 +246,12 @@ static void *worker_func(void *data)
     Formatter *formatter;
     char *cmdstring = NULL;
     gchar *temp;
+    gchar *filename = NULL;
+    gchar *filenamecomp = NULL;
     int processtrack = 0;
     int checkskip = 0;
+    int glitchcount = 0;
+    gboolean glitched = 0;
     Playlist *playlist;
 
     while (run)
@@ -279,23 +283,73 @@ static void *worker_func(void *data)
             /* Check to see if we should start processing */
             if (pos != prevpos)
             {
-                /* Our previous skip-check, if any, is no longer valid. */
-                checkskip = 0;
-
                 /* Also check for a glitch */
                 if (otime > 1000)
                 {
-                    fprintf(stderr, "pos %d, len %d (%ds): Glitching, counter at %d\n", pos+1, len, (len/1000), otime);
-                    processtrack = 0;
-                    pos = -1;
-                    len = -1;
+                    filenamecomp = aud_playlist_get_filename(playlist, pos);
+                    if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
+                    {
+                        if (otime >= oldtime-1000 && otime <= oldtime+1000)
+                        {
+                            /* Apparently our playlist entry just got moved - continue as per usual */
+                            fprintf(stderr, "pos %d, len %d (%ds): Position change detected at %d\n", pos+1, len, (len/1000), otime);
+                            prevpos = pos;
+                        }
+                        else
+                        {
+                            /* Handle this just like a skip */
+                            fprintf(stderr, "pos %d, len %d (%ds): Position change weirdness, handling as skip, at %d\n", pos+1, len, (len/1000), otime);
+                            processtrack = 0;
+                            checkskip = 1;
+                        }
+                    }
+                    else
+                    {
+                        /* Now into our usual glitching code. */
+
+                        if (!glitched)
+                        {
+                            /* We should look for skips here... */
+                            checkskip = 1;
+
+                            if (glitchcount >= 10)
+                            {
+                                fprintf(stderr, "pos %d, len %d (%ds): Discarding track, though it's probably just a playlist move\n",
+                                        pos+1, len, (len/1000));
+                                prevpos = pos;
+                                processtrack = 0;
+                                glitched = 1;
+                            }
+                            else
+                            {
+                                glitchcount++;
+                                if (glitchcount == 1)
+                                {
+                                    fprintf(stderr, "pos %d, len %d (%ds): Glitching, counter at %d\n", pos+1, len, (len/1000), otime);
+                                }
+                                processtrack = 0;
+                                pos = -1;
+                                len = -1;
+                            }
+                        }
+                    }
+                    g_free(filenamecomp);
                 }
                 else
                 {
+                    /* Our previous skip-check, if any, is no longer valid. */
+                    checkskip = 0;
+
                     fprintf(stderr, "pos %d, len %d (%ds): Starting track processing, counter at %d\n", pos+1, len, (len/1000), otime);
+                    glitchcount = 0;
+                    glitched = 0;
                     processtrack = 1;
                     oldtime = otime;
                     prevpos = pos;
+
+                    /* Load our filename, for checking later on */
+                    g_free(filename);
+                    filename = aud_playlist_get_filename(playlist, pos);
                 }
             }
 

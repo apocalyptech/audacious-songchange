@@ -287,13 +287,14 @@ void metaVorbis(metatag_t *meta)
 			meta->title = field->data;
 		}
 		/* Prefer PERFORMER to ARTIST */
-		else if(!fmt_strcasecmp(field->name, "PERFORMER"))
+        /* or.... NOT.  pez - 2008.06.17 */
+		else if(!fmt_strcasecmp(field->name, "ARTIST"))
 		{
 			pdebug("Found Artist!", META_DEBUG);
 
 			meta->artist = field->data;
 		}
-		else if(!fmt_strcasecmp(field->name, "ARTIST") && meta->artist == NULL)
+		else if(!fmt_strcasecmp(field->name, "PERFORMER") && meta->artist == NULL)
 		{
 			pdebug("Found Artist!", META_DEBUG);
 

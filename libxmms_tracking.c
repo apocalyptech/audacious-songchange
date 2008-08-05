@@ -1,4 +1,4 @@
-/* $Id: libxmms_tracking.c,v 1.42 2008/04/13 05:31:45 pez Exp $ */
+/* $Id: libxmms_tracking.c,v 1.43 2008/08/05 19:27:20 pez Exp $ */
 /* Some Includes */
 #include <pthread.h>
 #include <unistd.h>
@@ -16,6 +16,7 @@
 
 /* Player Includes */
 #include <audacious/plugin.h>
+#include "formatter.h"
 /*#include <audacious/configdb.h>*/
 /*#include <audacious/audctrl.h>*/
 /*#include <audacious/formatter.h>*/
@@ -201,12 +202,12 @@ static void associate(Formatter *formatter, char letter, char *data)
     char *tmp;
     if (data == NULL)
     {
-        aud_formatter_associate(formatter, letter, "");
+        formatter_associate(formatter, letter, "");
     }
     else
     {
         tmp = escape_shell_chars(data);
-        aud_formatter_associate(formatter, letter, tmp);
+        formatter_associate(formatter, letter, tmp);
         g_free(tmp);
     }
 }
@@ -392,7 +393,7 @@ static void *worker_func(void *data)
                             get_tag_data(meta, fname, 0);
 
                             /* Get our commandline */
-                            formatter = aud_formatter_new();
+                            formatter = formatter_new();
                             associate(formatter, 'a', (char *)meta->artist);
                             associate(formatter, 't', (char *)meta->title);
                             associate(formatter, 'l', (char *)meta->album);
@@ -402,8 +403,8 @@ static void *worker_func(void *data)
                             temp = g_strdup_printf("%d", len/1000);
                             associate(formatter, 's', (char *)temp);
                             g_free(temp);
-                            cmdstring = aud_formatter_format(formatter, cmd_line);
-                            aud_formatter_destroy(formatter);
+                            cmdstring = formatter_format(formatter, cmd_line);
+                            formatter_destroy(formatter);
 
                             /* Run the command */
                             fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);

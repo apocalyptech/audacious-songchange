@@ -51,3 +51,5 @@ libxmms_tracking_la-unicode.lo
 libxmms_tracking_la-vorbis.lo
 libxmms_tracking_la-wma.lo
 libxmms_tracking_la-libxmms_tracking.loT
+libaud_tracking_la-libxmms_tracking.loT
+libaud_tracking_la-formatter.lo

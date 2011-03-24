@@ -16,6 +16,9 @@
 
 /* Player Includes */
 #include <audacious/plugin.h>
+#include <audacious/configdb.h>
+#include <audacious/playlist.h>
+#include <audacious/drct.h>
 #include "formatter.h"
 /*#include <audacious/configdb.h>*/
 /*#include <audacious/audctrl.h>*/
@@ -124,7 +127,7 @@ static void save_and_close(GtkWidget *w, gpointer data)
     char *minlen;
     char *cmd;
 
-    ConfigDb *cfgfile = aud_cfg_db_open();
+    mcs_handle_t *cfgfile = aud_cfg_db_open();
 
     percent = gtk_entry_get_text(GTK_ENTRY(percent_entry));
     seconds = gtk_entry_get_text(GTK_ENTRY(seconds_entry));
@@ -249,16 +252,21 @@ static void *worker_func(void *data)
     gchar *temp;
     gchar *filename = NULL;
     gchar *filenamecomp = NULL;
+    gchar *tempfilepath = NULL;
+    gchar *tempfilename = NULL;
+    gchar *tempfilefull = NULL;
     int processtrack = 0;
     int checkskip = 0;
     int glitchcount = 0;
     gboolean glitched = 0;
-    Playlist *playlist;
+    gint playlist;
+    Tuple *tuple;
+    gboolean fast_call = 0;
 
     while (run)
     {
         /* See if we're playing */
-        playing = audacious_drct_get_playing();
+        playing = aud_drct_get_playing();
 
         /* Don't really do *anything* unless we're actually playing */
         if (playing)
@@ -266,8 +274,10 @@ static void *worker_func(void *data)
             /* NOW grab this info */
             playlist = aud_playlist_get_active();
             pos = aud_playlist_get_position(playlist);
-            len = aud_playlist_get_current_length(playlist);
-            otime = audacious_drct_get_time();
+            tuple = aud_playlist_entry_get_tuple(playlist, pos, fast_call);
+            len = tuple_get_int(tuple, FIELD_LENGTH, NULL);
+            //len = aud_playlist_get_current_length(playlist);
+            otime = aud_drct_get_time();
 
             /* Check to see if we were skipping (so we can recover if we skip back to the beginning) */
             if (checkskip)
@@ -287,7 +297,7 @@ static void *worker_func(void *data)
                 /* Also check for a glitch */
                 if (otime > 1000)
                 {
-                    filenamecomp = aud_playlist_get_filename(playlist, pos);
+                    filenamecomp = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_NAME, NULL));
                     if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
                     {
                         if (otime >= oldtime-1000 && otime <= oldtime+1000)
@@ -350,7 +360,7 @@ static void *worker_func(void *data)
 
                     /* Load our filename, for checking later on */
                     g_free(filename);
-                    filename = aud_playlist_get_filename(playlist, pos);
+                    filename = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_NAME, NULL));
                 }
             }
 
@@ -388,9 +398,21 @@ static void *worker_func(void *data)
                         if (cmd_line && strlen(cmd_line) > 0)
                         {
                             /* Get meta information */
-                            fname = g_filename_from_uri(aud_playlist_get_filename(playlist, pos), NULL, NULL);
+                            fprintf(stderr, "About to get tuple\n");
+                            tempfilepath = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_PATH, NULL));
+                            tempfilename = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_NAME, NULL));
+                            tempfilefull = g_strconcat(tempfilepath, tempfilename);
+                            fprintf(stderr, "Got tuple\n");
+                            fname = g_filename_from_uri(tempfilefull, NULL, NULL);
+                            fprintf(stderr, "Got URI: %s\n", fname);
+                            g_free(tempfilepath);
+                            g_free(tempfilename);
+                            g_free(tempfilefull);
+                            fprintf(stderr, "Freed\n");
                             meta = metatag_new();
+                            fprintf(stderr, "Have new metatag\n");
                             get_tag_data(meta, fname, 0);
+                            fprintf(stderr, "Got tag data\n");
 
                             /* Get our commandline */
                             formatter = formatter_new();
@@ -587,7 +609,7 @@ static void configure(void)
 
 static void read_config(void)
 {
-    ConfigDb *cfgfile;
+    mcs_handle_t *cfgfile;
 
     g_free(cmd_line);
     cmd_line = NULL;

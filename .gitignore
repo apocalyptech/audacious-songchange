@@ -1,3 +1,4 @@
+*.swp
 Makefile.in
 aclocal.m4
 autom4te.cache
@@ -9,7 +10,12 @@ Makefile
 config.h
 config.log
 config.status
+config.guess
+config.sub
+depcomp
 libtool
+install-sh
+missing
 stamp-h1
 .libs
 libxmms_tracking.la

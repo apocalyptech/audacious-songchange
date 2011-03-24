@@ -1,1 +1,4 @@
-wtf
+The exact lineage of the original version of this plugin has long since been lost.
+I suspect that it was based on a plugin from the original XMMS, so to keep things
+as simple as possible, let's just consider this under the GPL v2.1-or-later, which
+incidentally is what the code under tags/ is licensed under (which is not my code).

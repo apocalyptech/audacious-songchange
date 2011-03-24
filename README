@@ -1,8 +1,33 @@
-http://www.nobugs.org/developer/xmms/xmms-nobugs.html
+**************
+   WARNING   
+**************
+
+You probably don't want to be using this.  This is a "tracking" plugin I adapted
+from some old XMMS plugin, because I had wanted something which would
+sort of mimic the way last.fm/audioscrobbler keeps track of its music.  Some of
+this might have actually come from an early audioscrobbler plugin, now that I
+think about it.
+
+Specifically, I wanted something which would trigger at either a set time or
+set percentage of the song (whichever came first), with a minimum song length,
+and execute an arbitrary command at that time.
+
+So, it certainly does that, but the code is truly horrible.  This thing started
+out as a hack, years ago, and since that time pretty much the only changes have
+been to make sure that the thing will at least compile versus the latest version
+of whatever media player I've been using at the time (I seem to think that it
+started out XMMS, briefly detoured into BMP, and now rests in Auadacious).
+
+Anyway, don't expect anything out of it; this is just online at github so that
+I've got it backed up elsewhere, honestly.  Someday it might be nice to write
+up a plugin whose contents DON'T cause me to cringe, but it does seem pretty
+unlikely that I'll ever get around to doing so.
+
+**************
+   WARNING   
+**************
 
 TODO:
- * figure out how to let me dbl-click on the same file and have it
-   count both times
  * Make sure we don't have memory leaks and the like
  * Make sure we don't try to get tag information for remote URLs
  * Make config changes apply automatically

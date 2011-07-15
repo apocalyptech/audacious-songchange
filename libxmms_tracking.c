@@ -80,17 +80,11 @@ static GeneralPlugin xmms_tracking =
 */
 static GeneralPlugin xmms_tracking =
 {
-    .description = "Enhanced Song Change",
+    .description = "Audacious-Tracking " VERSION,
     .init = init,
     .configure = configure,
     .cleanup = cleanup
 };
-
-GeneralPlugin *get_gplugin_info(void)
-{
-    xmms_tracking.description = g_strdup_printf("Audacious-Tracking %s", VERSION);
-    return &xmms_tracking;
-}
 
 static void init(void)
 {

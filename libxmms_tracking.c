@@ -244,7 +244,7 @@ static void *worker_func(void *data)
     int oldtime = 0;
     int docmd;
     metatag_t *meta;
-    char *fname;
+    //char *fname;
     Formatter *formatter;
     char *cmdstring = NULL;
     gchar *temp;
@@ -399,17 +399,19 @@ static void *worker_func(void *data)
                             fprintf(stderr, "About to get tuple\n");
                             tempfilepath = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_PATH, NULL));
                             tempfilename = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_NAME, NULL));
-                            tempfilefull = g_strconcat(tempfilepath, tempfilename);
+                            tempfilefull = g_strconcat(tempfilepath, tempfilename, NULL);
                             fprintf(stderr, "Got tuple\n");
-                            fname = g_filename_from_uri(tempfilefull, NULL, NULL);
-                            fprintf(stderr, "Got URI: %s\n", fname);
+                            //fname = g_filename_from_uri(tempfilefull, NULL, NULL);
+                            //fprintf(stderr, "Got URI: %s\n", fname);
+                            fprintf(stderr, "Got path: %s\n", tempfilefull);
                             g_free(tempfilepath);
                             g_free(tempfilename);
-                            g_free(tempfilefull);
+                            //g_free(tempfilefull);
                             fprintf(stderr, "Freed\n");
                             meta = metatag_new();
                             fprintf(stderr, "Have new metatag\n");
-                            get_tag_data(meta, fname, 0);
+                            //get_tag_data(meta, fname, 0);
+                            get_tag_data(meta, tempfilefull, 0);
                             fprintf(stderr, "Got tag data\n");
 
                             /* Get our commandline */

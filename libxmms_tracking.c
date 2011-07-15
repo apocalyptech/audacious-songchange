@@ -35,7 +35,7 @@
 #define DEFAULT_MINIMUM 30
 
 /* Hooks */
-static void init(void);
+static gboolean init(void);
 static void cleanup(void);
 static void configure(void);
 
@@ -86,15 +86,19 @@ static GeneralPlugin xmms_tracking =
     .cleanup = cleanup
 };
 
-static void init(void)
+static gboolean init(void)
 {
     read_config();
     going = 1;
 
     fprintf(stderr, "Plugin init\n");
-    if (pthread_create(&pt_worker, NULL, worker_func, NULL))
+    if (pthread_create(&pt_worker, NULL, worker_func, NULL) == 0)
     {
-        return;
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
     }
 }
 

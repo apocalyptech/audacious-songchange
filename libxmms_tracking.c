@@ -16,13 +16,10 @@
 
 /* Player Includes */
 #include <audacious/plugin.h>
-#include <audacious/configdb.h>
+#include <audacious/misc.h>
 #include <audacious/playlist.h>
 #include <audacious/drct.h>
 #include "formatter.h"
-/*#include <audacious/configdb.h>*/
-/*#include <audacious/audctrl.h>*/
-/*#include <audacious/formatter.h>*/
 
 /* Local includes */
 #include "config.h"
@@ -65,27 +62,6 @@ static pthread_t pt_worker;
 /* Control variable for thread */
 static int going;
 
-/*
-static GeneralPlugin xmms_tracking =
-{
-    NULL,       // handle
-    NULL,       // filename
-    -1,     // xmms_session
-    NULL,       // description
-    init,
-    NULL,
-    configure,
-    cleanup,
-};
-*/
-static GeneralPlugin xmms_tracking =
-{
-    .description = "Audacious-Tracking " VERSION,
-    .init = init,
-    .configure = configure,
-    .cleanup = cleanup
-};
-
 static gboolean init(void)
 {
     read_config();
@@ -125,18 +101,15 @@ static void save_and_close(GtkWidget *w, gpointer data)
     char *minlen;
     char *cmd;
 
-    mcs_handle_t *cfgfile = aud_cfg_db_open();
-
     percent = gtk_entry_get_text(GTK_ENTRY(percent_entry));
     seconds = gtk_entry_get_text(GTK_ENTRY(seconds_entry));
     minlen = gtk_entry_get_text(GTK_ENTRY(minimum_entry));
     cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
 
-    aud_cfg_db_set_int(cfgfile, CFGCAT, "percent_done", atoi(percent));
-    aud_cfg_db_set_int(cfgfile, CFGCAT, "seconds_past", atoi(seconds));
-    aud_cfg_db_set_int(cfgfile, CFGCAT, "minimum_len", atoi(minlen));
-    aud_cfg_db_set_string(cfgfile, CFGCAT, "cmd_line", cmd);
-    aud_cfg_db_close(cfgfile);
+    aud_set_int(CFGCAT, "percent_done", atoi(percent));
+    aud_set_int(CFGCAT, "seconds_past", atoi(seconds));
+    aud_set_int(CFGCAT, "minimum_len", atoi(minlen));
+    aud_set_string(CFGCAT, "cmd_line", cmd);
 
     gtk_widget_destroy(configure_win);
 }
@@ -273,177 +246,184 @@ static void *worker_func(void *data)
             playlist = aud_playlist_get_active();
             pos = aud_playlist_get_position(playlist);
             tuple = aud_playlist_entry_get_tuple(playlist, pos, fast_call);
-            len = tuple_get_int(tuple, FIELD_LENGTH, NULL);
-            //len = aud_playlist_get_current_length(playlist);
-            otime = aud_drct_get_time();
-
-            /* Check to see if we were skipping (so we can recover if we skip back to the beginning) */
-            if (checkskip)
+            if (tuple)
             {
-                if (otime <= 1000)
-                {
-                    /* Doing this will let us get picked up by the next block */
-                    fprintf(stderr, "pos %d, len %d (%ds): Skip-to-beginning detected, allowing track (at %d)\n", pos+1, len, (len/1000), otime);
-                    prevpos = -1;
-                    checkskip = 0;
-                }
-            }
+                len = tuple_get_int(tuple, FIELD_LENGTH, NULL);
+                //len = aud_playlist_get_current_length(playlist);
+                otime = aud_drct_get_time();
 
-            /* Check to see if we should start processing */
-            if (pos != prevpos)
-            {
-                /* Also check for a glitch */
-                if (otime > 1000)
+                /* Check to see if we were skipping (so we can recover if we skip back to the beginning) */
+                if (checkskip)
                 {
-                    filenamecomp = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_NAME, NULL));
-                    if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
+                    if (otime <= 1000)
                     {
-                        if (otime >= oldtime-1000 && otime <= oldtime+1000)
-                        {
-                            /* Apparently our playlist entry just got moved - continue as per usual */
-                            fprintf(stderr, "pos %d, len %d (%ds): Position change detected at %d\n", pos+1, len, (len/1000), otime);
-                            prevpos = pos;
-                        }
-                        else
-                        {
-                            /* Handle this just like a skip */
-                            fprintf(stderr, "pos %d, len %d (%ds): Position change weirdness, handling as skip, at %d\n", pos+1, len, (len/1000), otime);
-                            processtrack = 0;
-                            checkskip = 1;
-                        }
+                        /* Doing this will let us get picked up by the next block */
+                        fprintf(stderr, "pos %d, len %d (%ds): Skip-to-beginning detected, allowing track (at %d)\n", pos+1, len, (len/1000), otime);
+                        prevpos = -1;
+                        checkskip = 0;
                     }
-                    else
+                }
+
+                /* Check to see if we should start processing */
+                if (pos != prevpos)
+                {
+                    /* Also check for a glitch */
+                    if (otime > 1000)
                     {
-                        /* Now into our usual glitching code. */
-
-                        if (!glitched)
+                        filenamecomp = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME, NULL));
+                        if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
                         {
-                            /* We should look for skips here... */
-                            checkskip = 1;
-
-                            if (glitchcount >= 10)
+                            if (otime >= oldtime-1000 && otime <= oldtime+1000)
                             {
-                                fprintf(stderr, "pos %d, len %d (%ds): Discarding track, though it's probably just a playlist move\n",
-                                        pos+1, len, (len/1000));
+                                /* Apparently our playlist entry just got moved - continue as per usual */
+                                fprintf(stderr, "pos %d, len %d (%ds): Position change detected at %d\n", pos+1, len, (len/1000), otime);
                                 prevpos = pos;
-                                processtrack = 0;
-                                glitched = 1;
                             }
                             else
                             {
-                                glitchcount++;
-                                if (glitchcount == 1)
-                                {
-                                    fprintf(stderr, "pos %d, len %d (%ds): Glitching, counter at %d\n", pos+1, len, (len/1000), otime);
-                                }
+                                /* Handle this just like a skip */
+                                fprintf(stderr, "pos %d, len %d (%ds): Position change weirdness, handling as skip, at %d\n", pos+1, len, (len/1000), otime);
                                 processtrack = 0;
-                                pos = -1;
-                                len = -1;
+                                checkskip = 1;
                             }
-                        }
-                    }
-                    g_free(filenamecomp);
-                }
-                else
-                {
-                    /* Our previous skip-check, if any, is no longer valid. */
-                    checkskip = 0;
-
-                    fprintf(stderr, "pos %d, len %d (%ds): Starting track processing, counter at %d\n", pos+1, len, (len/1000), otime);
-                    glitchcount = 0;
-                    glitched = 0;
-                    processtrack = 1;
-                    oldtime = otime;
-                    prevpos = pos;
-
-                    /* Load our filename, for checking later on */
-                    g_free(filename);
-                    filename = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_NAME, NULL));
-                }
-            }
-
-            /* And now process if we're supposed to */
-            if (processtrack)
-            {
-
-                /* Sanity check - minimum length */
-                if (len < (minimum_len*1000))
-                {
-                    fprintf(stderr, "pos %d, len %d (%ds): Song shorter than %d seconds, discarding song.\n", pos+1, len, (len/1000), minimum_len);
-                    processtrack = 0;
-                }
-                /* Sanity check - has the user skipped in the track? */
-                else if (otime - oldtime > 5000)
-                {
-                    fprintf(stderr, "pos %d, len %d (%ds): No skipping allowed, discarding song (%d -> %d)\n", pos+1, len, (len/1000), oldtime, otime);
-                    processtrack = 0;
-                    checkskip = 1;
-                }
-                /* Finally we're ready to see if we should run the command or not */
-                else
-                {
-                    /* Are we supposed to run the command yet? */
-                    docmd = (otime/1000 > seconds_past) ||
-                        (((double)otime/((double)len + 1) * 100) >= percent_done);
-                    
-                    /* Run the command if needed */
-                    if (docmd)
-                    {
-                        /* This'll make sure we only call it once per track */
-                        processtrack = 0;
-
-                        /* Run the command */
-                        if (cmd_line && strlen(cmd_line) > 0)
-                        {
-                            /* Get meta information */
-                            fprintf(stderr, "About to get tuple\n");
-                            tempfilepath = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_PATH, NULL));
-                            tempfilename = g_strdup((gchar *) tuple_get_string(tuple, FIELD_FILE_NAME, NULL));
-                            tempfilefull = g_strconcat(tempfilepath, tempfilename, NULL);
-                            fprintf(stderr, "Got tuple\n");
-                            //fname = g_filename_from_uri(tempfilefull, NULL, NULL);
-                            //fprintf(stderr, "Got URI: %s\n", fname);
-                            fprintf(stderr, "Got path: %s\n", tempfilefull);
-                            g_free(tempfilepath);
-                            g_free(tempfilename);
-                            //g_free(tempfilefull);
-                            fprintf(stderr, "Freed\n");
-                            meta = metatag_new();
-                            fprintf(stderr, "Have new metatag\n");
-                            //get_tag_data(meta, fname, 0);
-                            get_tag_data(meta, tempfilefull, 0);
-                            fprintf(stderr, "Got tag data\n");
-
-                            /* Get our commandline */
-                            formatter = formatter_new();
-                            associate(formatter, 'a', (char *)meta->artist);
-                            associate(formatter, 't', (char *)meta->title);
-                            associate(formatter, 'l', (char *)meta->album);
-                            associate(formatter, 'y', (char *)meta->year);
-                            associate(formatter, 'g', (char *)meta->genre);
-                            associate(formatter, 'n', (char *)meta->track);
-                            temp = g_strdup_printf("%d", len/1000);
-                            associate(formatter, 's', (char *)temp);
-                            g_free(temp);
-                            cmdstring = formatter_format(formatter, cmd_line);
-                            formatter_destroy(formatter);
-
-                            /* Run the command */
-                            fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);
-                            execute_command(cmdstring);
-                            g_free(cmdstring);  /* according to song_change.c, this could get freed too early */
                         }
                         else
                         {
-                            fprintf(stderr, "Would run the command now, but no command present.\n");
+                            /* Now into our usual glitching code. */
+
+                            if (!glitched)
+                            {
+                                /* We should look for skips here... */
+                                checkskip = 1;
+
+                                if (glitchcount >= 10)
+                                {
+                                    fprintf(stderr, "pos %d, len %d (%ds): Discarding track, though it's probably just a playlist move\n",
+                                            pos+1, len, (len/1000));
+                                    prevpos = pos;
+                                    processtrack = 0;
+                                    glitched = 1;
+                                }
+                                else
+                                {
+                                    glitchcount++;
+                                    if (glitchcount == 1)
+                                    {
+                                        fprintf(stderr, "pos %d, len %d (%ds): Glitching, counter at %d\n", pos+1, len, (len/1000), otime);
+                                    }
+                                    processtrack = 0;
+                                    pos = -1;
+                                    len = -1;
+                                }
+                            }
+                        }
+                        g_free(filenamecomp);
+                    }
+                    else
+                    {
+                        /* Our previous skip-check, if any, is no longer valid. */
+                        checkskip = 0;
+
+                        fprintf(stderr, "pos %d, len %d (%ds): Starting track processing, counter at %d\n", pos+1, len, (len/1000), otime);
+                        glitchcount = 0;
+                        glitched = 0;
+                        processtrack = 1;
+                        oldtime = otime;
+                        prevpos = pos;
+
+                        /* Load our filename, for checking later on */
+                        g_free(filename);
+                        filename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME, NULL));
+                    }
+                }
+
+                /* And now process if we're supposed to */
+                if (processtrack)
+                {
+
+                    /* Sanity check - minimum length */
+                    if (len < (minimum_len*1000))
+                    {
+                        fprintf(stderr, "pos %d, len %d (%ds): Song shorter than %d seconds, discarding song.\n", pos+1, len, (len/1000), minimum_len);
+                        processtrack = 0;
+                    }
+                    /* Sanity check - has the user skipped in the track? */
+                    else if (otime - oldtime > 5000)
+                    {
+                        fprintf(stderr, "pos %d, len %d (%ds): No skipping allowed, discarding song (%d -> %d)\n", pos+1, len, (len/1000), oldtime, otime);
+                        processtrack = 0;
+                        checkskip = 1;
+                    }
+                    /* Finally we're ready to see if we should run the command or not */
+                    else
+                    {
+                        /* Are we supposed to run the command yet? */
+                        docmd = (otime/1000 > seconds_past) ||
+                            (((double)otime/((double)len + 1) * 100) >= percent_done);
+                        
+                        /* Run the command if needed */
+                        if (docmd)
+                        {
+                            /* This'll make sure we only call it once per track */
+                            processtrack = 0;
+
+                            /* Run the command */
+                            if (cmd_line && strlen(cmd_line) > 0)
+                            {
+                                /* Get meta information */
+                                fprintf(stderr, "About to get tuple\n");
+                                tempfilepath = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_PATH, NULL));
+                                tempfilename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME, NULL));
+                                tempfilefull = g_strconcat(tempfilepath, tempfilename, NULL);
+                                fprintf(stderr, "Got tuple\n");
+                                //fname = g_filename_from_uri(tempfilefull, NULL, NULL);
+                                //fprintf(stderr, "Got URI: %s\n", fname);
+                                fprintf(stderr, "Got path: %s\n", tempfilefull);
+                                g_free(tempfilepath);
+                                g_free(tempfilename);
+                                //g_free(tempfilefull);
+                                fprintf(stderr, "Freed\n");
+                                meta = metatag_new();
+                                fprintf(stderr, "Have new metatag\n");
+                                //get_tag_data(meta, fname, 0);
+                                get_tag_data(meta, tempfilefull, 0);
+                                fprintf(stderr, "Got tag data\n");
+
+                                /* Get our commandline */
+                                formatter = formatter_new();
+
+                                associate(formatter, 'a', (char *)tuple_get_str(tuple, FIELD_ARTIST, NULL));
+                                associate(formatter, 't', (char *)tuple_get_str(tuple, FIELD_TITLE, NULL));
+                                associate(formatter, 'l', (char *)tuple_get_str(tuple, FIELD_ALBUM, NULL));
+                                // TODO: is FIELD_YEAR an int as well?
+                                associate(formatter, 'y', (char *)tuple_get_str(tuple, FIELD_YEAR, NULL));
+                                associate(formatter, 'g', (char *)tuple_get_str(tuple, FIELD_GENRE, NULL));
+                                temp = g_strdup_printf("%d", (int)tuple_get_int(tuple, FIELD_TRACK_NUMBER, NULL));
+                                associate(formatter, 'n', (char *)temp);
+                                g_free(temp);
+                                temp = g_strdup_printf("%d", len/1000);
+                                associate(formatter, 's', (char *)temp);
+                                g_free(temp);
+                                cmdstring = formatter_format(formatter, cmd_line);
+                                formatter_destroy(formatter);
+
+                                /* Run the command */
+                                fprintf(stderr, "pos %d, len %d (%ds): Running command at %d secs: %s\n", pos+1, len, (len/1000), (otime/1000), cmdstring);
+                                execute_command(cmdstring);
+                                g_free(cmdstring);  /* according to song_change.c, this could get freed too early */
+                            }
+                            else
+                            {
+                                fprintf(stderr, "Would run the command now, but no command present.\n");
+                            }
                         }
                     }
                 }
-            }
 
-            /* Update prev vars */
-            prevpos = pos;
-            oldtime = otime;
+                /* Update prev vars */
+                prevpos = pos;
+                oldtime = otime;
+            }
         }
         else
         {
@@ -609,19 +589,13 @@ static void configure(void)
 
 static void read_config(void)
 {
-    mcs_handle_t *cfgfile;
-
     g_free(cmd_line);
     cmd_line = NULL;
 
-    if ((cfgfile = aud_cfg_db_open()) != NULL)
-    {
-        aud_cfg_db_get_int(cfgfile, CFGCAT, "percent_done", &percent_done);
-        aud_cfg_db_get_int(cfgfile, CFGCAT, "seconds_past", &seconds_past);
-        aud_cfg_db_get_int(cfgfile, CFGCAT, "minimum_len", &minimum_len);
-        aud_cfg_db_get_string(cfgfile, CFGCAT, "cmd_line", &cmd_line);
-        aud_cfg_db_close(cfgfile);
-    }
+    percent_done = aud_get_int(CFGCAT, "percent_done");
+    seconds_past = aud_get_int(CFGCAT, "seconds_past");
+    minimum_len = aud_get_int(CFGCAT, "minimum_len");
+    cmd_line = aud_get_string(CFGCAT, "cmd_line");
 
     if (percent_done == -1)
     {
@@ -639,5 +613,10 @@ static void read_config(void)
     }
 }
 
-GeneralPlugin *tracking_gplist[] = { &xmms_tracking, NULL };
-DECLARE_PLUGIN(tracking, NULL, NULL, NULL, NULL, NULL, tracking_gplist, NULL, NULL);
+AUD_GENERAL_PLUGIN
+(
+    .name = "Audacious-Tracking " VERSION,
+    .init = init,
+    .configure = configure,
+    .cleanup = cleanup
+)

@@ -5,6 +5,7 @@ audlibdir = `pkg-config audacious --variable=general_plugin_dir`
 AM_CFLAGS = -Wall @CFLAGS@ @GTK_CFLAGS@ -I$(tob_builddir) -I$(top_srcdir) \
          -DMETA_DEBUG=0
 AM_LDFLAGS = @LDFLAGS@ -module -avoid-version
+ACLOCAL_AMFLAGS = -I m4
 LIBS = @GTK_LIBS@
 
 libaud_tracking_la_CFLAGS = $(AM_CFLAGS) @AUD_CFLAGS@

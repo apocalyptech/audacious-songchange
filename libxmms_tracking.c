@@ -23,7 +23,6 @@
 
 /* Local includes */
 #include "config.h"
-#include "tags/include/tags.h"
 
 /* Other defines */
 #define CFGCAT "xmms_tracking"
@@ -216,7 +215,6 @@ static void *worker_func(void *data)
     int len = -1;
     int oldtime = 0;
     int docmd;
-    metatag_t *meta;
     //char *fname;
     Formatter *formatter;
     char *cmdstring = NULL;
@@ -383,11 +381,6 @@ static void *worker_func(void *data)
                                 g_free(tempfilename);
                                 //g_free(tempfilefull);
                                 fprintf(stderr, "Freed\n");
-                                meta = metatag_new();
-                                fprintf(stderr, "Have new metatag\n");
-                                //get_tag_data(meta, fname, 0);
-                                get_tag_data(meta, tempfilefull, 0);
-                                fprintf(stderr, "Got tag data\n");
 
                                 /* Get our commandline */
                                 formatter = formatter_new();

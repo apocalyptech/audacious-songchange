@@ -247,8 +247,22 @@ static void *worker_func(void *data)
             if (tuple)
             {
                 len = tuple_get_int(tuple, FIELD_LENGTH, NULL);
-                //len = aud_playlist_get_current_length(playlist);
-                otime = aud_drct_get_time();
+                // TODO: Calling aud_drct_get_time() when aud_drct_get_ready() returns FALSE
+                // can lead to the Audacious GUI freezing; this happens sometimes when the
+                // check happens inbetween track plays, when the decoder is still warming up
+                // (though the freeze does not happen in every case).  This is still technically
+                // not threadsafe, since we could technically get into a non-ready state
+                // inbetween the ready check and the get_time call, but it should be better than
+                // what we were doing before, at least, which would tend to fail reasonably
+                // often.
+                if (aud_drct_get_ready())
+                {
+                    otime = aud_drct_get_time();
+                }
+                else
+                {
+                    otime = 0;
+                }
 
                 /* Check to see if we were skipping (so we can recover if we skip back to the beginning) */
                 if (checkskip)

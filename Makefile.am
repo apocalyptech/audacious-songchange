@@ -1,6 +1,6 @@
 # $Id: Makefile.am,v 1.8 2008/08/05 19:27:20 pez Exp $
 audlib_LTLIBRARIES = libaud_tracking.la
-audlibdir = `pkg-config audacious --variable=general_plugin_dir`
+audlibdir = "`pkg-config audacious --variable=plugin_dir`/General"
 
 AM_CFLAGS = -Wall @CFLAGS@ @GTK_CFLAGS@ -I$(tob_builddir) -I$(top_srcdir)
 AM_LDFLAGS = @LDFLAGS@ -module -avoid-version

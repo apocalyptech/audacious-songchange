@@ -246,7 +246,7 @@ static void *worker_func(void *data)
             tuple = aud_playlist_entry_get_tuple(playlist, pos, fast_call);
             if (tuple)
             {
-                len = tuple_get_int(tuple, FIELD_LENGTH, NULL);
+                len = tuple_get_int(tuple, FIELD_LENGTH);
                 // TODO: Calling aud_drct_get_time() when aud_drct_get_ready() returns FALSE
                 // can lead to the Audacious GUI freezing; this happens sometimes when the
                 // check happens inbetween track plays, when the decoder is still warming up
@@ -282,7 +282,7 @@ static void *worker_func(void *data)
                     /* Also check for a glitch */
                     if (otime > 1000)
                     {
-                        filenamecomp = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME, NULL));
+                        filenamecomp = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
                         if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
                         {
                             if (otime >= oldtime-1000 && otime <= oldtime+1000)
@@ -345,7 +345,7 @@ static void *worker_func(void *data)
 
                         /* Load our filename, for checking later on */
                         g_free(filename);
-                        filename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME, NULL));
+                        filename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
                     }
                 }
 
@@ -384,8 +384,8 @@ static void *worker_func(void *data)
                             {
                                 /* Get meta information */
                                 fprintf(stderr, "About to get tuple\n");
-                                tempfilepath = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_PATH, NULL));
-                                tempfilename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME, NULL));
+                                tempfilepath = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_PATH));
+                                tempfilename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
                                 tempfilefull = g_strconcat(tempfilepath, tempfilename, NULL);
                                 fprintf(stderr, "Got tuple\n");
                                 //fname = g_filename_from_uri(tempfilefull, NULL, NULL);
@@ -399,13 +399,13 @@ static void *worker_func(void *data)
                                 /* Get our commandline */
                                 formatter = formatter_new();
 
-                                associate(formatter, 'a', (char *)tuple_get_str(tuple, FIELD_ARTIST, NULL));
-                                associate(formatter, 't', (char *)tuple_get_str(tuple, FIELD_TITLE, NULL));
-                                associate(formatter, 'l', (char *)tuple_get_str(tuple, FIELD_ALBUM, NULL));
+                                associate(formatter, 'a', (char *)tuple_get_str(tuple, FIELD_ARTIST));
+                                associate(formatter, 't', (char *)tuple_get_str(tuple, FIELD_TITLE));
+                                associate(formatter, 'l', (char *)tuple_get_str(tuple, FIELD_ALBUM));
                                 // TODO: is FIELD_YEAR an int as well?
-                                associate(formatter, 'y', (char *)tuple_get_str(tuple, FIELD_YEAR, NULL));
-                                associate(formatter, 'g', (char *)tuple_get_str(tuple, FIELD_GENRE, NULL));
-                                temp = g_strdup_printf("%d", (int)tuple_get_int(tuple, FIELD_TRACK_NUMBER, NULL));
+                                associate(formatter, 'y', (char *)tuple_get_str(tuple, FIELD_YEAR));
+                                associate(formatter, 'g', (char *)tuple_get_str(tuple, FIELD_GENRE));
+                                temp = g_strdup_printf("%d", (int)tuple_get_int(tuple, FIELD_TRACK_NUMBER));
                                 associate(formatter, 'n', (char *)temp);
                                 g_free(temp);
                                 temp = g_strdup_printf("%d", len/1000);
@@ -602,7 +602,7 @@ static void read_config(void)
     percent_done = aud_get_int(CFGCAT, "percent_done");
     seconds_past = aud_get_int(CFGCAT, "seconds_past");
     minimum_len = aud_get_int(CFGCAT, "minimum_len");
-    cmd_line = aud_get_string(CFGCAT, "cmd_line");
+    cmd_line = aud_get_str(CFGCAT, "cmd_line");
 
     if (percent_done == -1)
     {

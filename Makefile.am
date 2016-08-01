@@ -10,4 +10,4 @@ LIBS = @GTK_LIBS@
 libaud_tracking_la_CFLAGS = $(AM_CFLAGS) @AUD_CFLAGS@
 libaud_tracking_la_LIBS = $(LIBS) @AUD_LIBS@
 libaud_tracking_la_LDFLAGS = $(AM_LDFLAGS)
-libaud_tracking_la_SOURCES = formatter.c libxmms_tracking.c
+libaud_tracking_la_SOURCES = formatter.cc libxmms_tracking.cc

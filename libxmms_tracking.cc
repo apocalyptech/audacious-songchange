@@ -15,11 +15,16 @@
 #include <gtk/gtk.h>
 
 /* Player Includes */
-#include <audacious/plugin.h>
-#include <audacious/misc.h>
-#include <audacious/playlist.h>
-#include <audacious/drct.h>
+#include <libaudcore/plugin.h>
+#include <libaudcore/playlist.h>
+#include <libaudcore/drct.h>
+#include <libaudcore/runtime.h>
+#include <libaudcore/i18n.h>
+#include <libaudcore/audstrings.h>
 #include "formatter.h"
+
+/* This is supposed to come from autoconf/configure.ac, but whatever. */
+#define EXPORT __attribute__((visibility("default")))
 
 /* Local includes */
 #include "config.h"
@@ -30,10 +35,32 @@
 #define DEFAULT_SECONDS 240
 #define DEFAULT_MINIMUM 30
 
-/* Hooks */
-static gboolean init(void);
-static void cleanup(void);
 static void configure(void);
+
+class AudaciousTracking : public GeneralPlugin
+{
+public:
+    static const char about[];
+
+    static constexpr PluginInfo info = {
+        N_("Audacious-Tracking" VERSION),
+        PACKAGE,
+        about,
+        NULL
+        //&configure
+    };
+
+    constexpr AudaciousTracking () : GeneralPlugin (info, false) {}
+
+    bool init ();
+    void cleanup ();
+};
+
+EXPORT AudaciousTracking aud_plugin_instance;
+
+/* Hooks */
+//static gboolean init(void);
+//static void cleanup(void);
 
 /* Other functions */
 static void read_config(void);
@@ -61,7 +88,7 @@ static pthread_t pt_worker;
 /* Control variable for thread */
 static int going;
 
-static gboolean init(void)
+bool AudaciousTracking::init()
 {
     read_config();
     going = 1;
@@ -77,7 +104,7 @@ static gboolean init(void)
     }
 }
 
-static void cleanup(void)
+void AudaciousTracking::cleanup()
 {
     fprintf(stderr, "In cleanup\n");
     void *dummy;
@@ -95,20 +122,20 @@ static void cleanup(void)
 
 static void save_and_close(GtkWidget *w, gpointer data)
 {
-    char *percent;
-    char *seconds;
-    char *minlen;
-    char *cmd;
+    gchar *percent;
+    gchar *seconds;
+    gchar *minlen;
+    gchar *cmd;
 
-    percent = gtk_entry_get_text(GTK_ENTRY(percent_entry));
-    seconds = gtk_entry_get_text(GTK_ENTRY(seconds_entry));
-    minlen = gtk_entry_get_text(GTK_ENTRY(minimum_entry));
-    cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
+    percent = (gchar *)gtk_entry_get_text(GTK_ENTRY(percent_entry));
+    seconds = (gchar *)gtk_entry_get_text(GTK_ENTRY(seconds_entry));
+    minlen = (gchar *)gtk_entry_get_text(GTK_ENTRY(minimum_entry));
+    cmd = (gchar *)gtk_entry_get_text(GTK_ENTRY(cmd_entry));
 
     aud_set_int(CFGCAT, "percent_done", atoi(percent));
     aud_set_int(CFGCAT, "seconds_past", atoi(seconds));
     aud_set_int(CFGCAT, "minimum_len", atoi(minlen));
-    aud_set_string(CFGCAT, "cmd_line", cmd);
+    aud_set_str(CFGCAT, "cmd_line", cmd);
 
     gtk_widget_destroy(configure_win);
 }
@@ -120,14 +147,14 @@ static char *wtfescape(char *string)
 {
     const gchar *special = "$`"; /* chars to escape */
     char *in = string, *out;
-    char *escaped;
+    gchar *escaped;
     int num = 0;
 
     while (*in != '\0')
         if (strchr(special, *in++))
             num++;
 
-    escaped = g_malloc(strlen(string) + num + 1);
+    escaped = (gchar *)g_malloc(strlen(string) + num + 1);
 
     in = string;
     out = escaped;
@@ -147,14 +174,14 @@ static char *escape_shell_chars(char *string)
 {
     const gchar *special = "$`\"\\"; /* chars to escape */
     char *in = string, *out;
-    char *escaped;
+    gchar *escaped;
     int num = 0;
 
     while (*in != '\0')
         if (strchr(special, *in++))
             num++;
 
-    escaped = g_malloc(strlen(string) + num + 1);
+    escaped = (gchar *)g_malloc(strlen(string) + num + 1);
 
     in = string;
     out = escaped;
@@ -221,16 +248,14 @@ static void *worker_func(void *data)
     gchar *temp;
     gchar *filename = NULL;
     gchar *filenamecomp = NULL;
-    gchar *tempfilepath = NULL;
-    gchar *tempfilename = NULL;
     gchar *tempfilefull = NULL;
     int processtrack = 0;
     int checkskip = 0;
     int glitchcount = 0;
     gboolean glitched = 0;
     gint playlist;
-    Tuple *tuple;
-    gboolean fast_call = 0;
+    Tuple tuple;
+    Playlist::GetMode playlist_nothing = Playlist::Nothing;
 
     while (run)
     {
@@ -243,10 +268,12 @@ static void *worker_func(void *data)
             /* NOW grab this info */
             playlist = aud_playlist_get_active();
             pos = aud_playlist_get_position(playlist);
-            tuple = aud_playlist_entry_get_tuple(playlist, pos, fast_call);
+            // TODO: probably returns an empty Tuple() now, rather than NULL, if the
+            // entry can't be ascertained
+            tuple = aud_playlist_entry_get_tuple(playlist, pos, playlist_nothing);
             if (tuple)
             {
-                len = tuple_get_int(tuple, FIELD_LENGTH);
+                len = tuple.get_int(Tuple::Length);
                 // TODO: Calling aud_drct_get_time() when aud_drct_get_ready() returns FALSE
                 // can lead to the Audacious GUI freezing; this happens sometimes when the
                 // check happens inbetween track plays, when the decoder is still warming up
@@ -282,7 +309,8 @@ static void *worker_func(void *data)
                     /* Also check for a glitch */
                     if (otime > 1000)
                     {
-                        filenamecomp = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
+                        //filenamecomp = g_strdup((gchar *) tuple.get_str(Tuple::FILE_NAME));
+                        filenamecomp = g_strconcat(tuple.get_str(Tuple::Path), tuple.get_str(Tuple::Basename));
                         if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
                         {
                             if (otime >= oldtime-1000 && otime <= oldtime+1000)
@@ -345,7 +373,8 @@ static void *worker_func(void *data)
 
                         /* Load our filename, for checking later on */
                         g_free(filename);
-                        filename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
+                        //filename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
+                        filename = g_strconcat(tuple.get_str(Tuple::Path), tuple.get_str(Tuple::Basename));
                     }
                 }
 
@@ -384,28 +413,24 @@ static void *worker_func(void *data)
                             {
                                 /* Get meta information */
                                 fprintf(stderr, "About to get tuple\n");
-                                tempfilepath = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_PATH));
-                                tempfilename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
-                                tempfilefull = g_strconcat(tempfilepath, tempfilename, NULL);
+                                tempfilefull = g_strconcat(tuple.get_str(Tuple::Path), tuple.get_str(Tuple::Basename));
                                 fprintf(stderr, "Got tuple\n");
                                 //fname = g_filename_from_uri(tempfilefull, NULL, NULL);
                                 //fprintf(stderr, "Got URI: %s\n", fname);
                                 fprintf(stderr, "Got path: %s\n", tempfilefull);
-                                g_free(tempfilepath);
-                                g_free(tempfilename);
-                                //g_free(tempfilefull);
+                                g_free(tempfilefull);
                                 fprintf(stderr, "Freed\n");
 
                                 /* Get our commandline */
                                 formatter = formatter_new();
 
-                                associate(formatter, 'a', (char *)tuple_get_str(tuple, FIELD_ARTIST));
-                                associate(formatter, 't', (char *)tuple_get_str(tuple, FIELD_TITLE));
-                                associate(formatter, 'l', (char *)tuple_get_str(tuple, FIELD_ALBUM));
+                                associate(formatter, 'a', tuple.get_str(Tuple::Artist).to_raw());
+                                associate(formatter, 't', tuple.get_str(Tuple::Title).to_raw());
+                                associate(formatter, 'l', tuple.get_str(Tuple::Album).to_raw());
                                 // TODO: is FIELD_YEAR an int as well?
-                                associate(formatter, 'y', (char *)tuple_get_str(tuple, FIELD_YEAR));
-                                associate(formatter, 'g', (char *)tuple_get_str(tuple, FIELD_GENRE));
-                                temp = g_strdup_printf("%d", (int)tuple_get_int(tuple, FIELD_TRACK_NUMBER));
+                                associate(formatter, 'y', tuple.get_str(Tuple::Year).to_raw());
+                                associate(formatter, 'g', tuple.get_str(Tuple::Genre).to_raw());
+                                temp = g_strdup_printf("%d", tuple.get_int(Tuple::Track));
                                 associate(formatter, 'n', (char *)temp);
                                 g_free(temp);
                                 temp = g_strdup_printf("%d", len/1000);
@@ -457,9 +482,9 @@ static void *worker_func(void *data)
 
 static void configure_ok_cb(GtkWidget *w, gpointer data)
 {
-    char *cmd;
+    gchar *cmd;
 
-    cmd = gtk_entry_get_text(GTK_ENTRY(cmd_entry));
+    cmd = (gchar *)gtk_entry_get_text(GTK_ENTRY(cmd_entry));
     /* Theoretically do some checking on cmd here */
     save_and_close(NULL, NULL);
 }
@@ -602,7 +627,7 @@ static void read_config(void)
     percent_done = aud_get_int(CFGCAT, "percent_done");
     seconds_past = aud_get_int(CFGCAT, "seconds_past");
     minimum_len = aud_get_int(CFGCAT, "minimum_len");
-    cmd_line = aud_get_str(CFGCAT, "cmd_line");
+    cmd_line = aud_get_str(CFGCAT, "cmd_line").to_raw();
 
     if (percent_done == -1)
     {
@@ -620,6 +645,11 @@ static void read_config(void)
     }
 }
 
+const char AudaciousTracking::about[] =
+N_("Audacious Tracking Plugin 0.3.0 by CJ,\n\n"
+    "It is awful.  Apologies!\n\n");
+
+/*
 AUD_GENERAL_PLUGIN
 (
     .name = "Audacious-Tracking " VERSION,
@@ -627,3 +657,4 @@ AUD_GENERAL_PLUGIN
     .configure = configure,
     .cleanup = cleanup
 )
+*/

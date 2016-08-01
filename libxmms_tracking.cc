@@ -109,8 +109,9 @@ void AudaciousTracking::cleanup()
     fprintf(stderr, "In cleanup\n");
     void *dummy;
 
-    if (cmd_line)
-        g_free(cmd_line);
+    // Freeing at this point seems to cause a coredump
+    //if (cmd_line)
+    //    g_free(cmd_line);
     cmd_line = NULL;
 
     if (going)
@@ -309,8 +310,12 @@ static void *worker_func(void *data)
                     /* Also check for a glitch */
                     if (otime > 1000)
                     {
-                        //filenamecomp = g_strdup((gchar *) tuple.get_str(Tuple::FILE_NAME));
-                        filenamecomp = g_strconcat(tuple.get_str(Tuple::Path), tuple.get_str(Tuple::Basename));
+                        filenamecomp = g_strconcat(tuple.get_str(Tuple::Path).to_raw(),
+                                "/",
+                                tuple.get_str(Tuple::Basename).to_raw(),
+                                ".",
+                                tuple.get_str(Tuple::Suffix).to_raw(),
+                                NULL);
                         if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
                         {
                             if (otime >= oldtime-1000 && otime <= oldtime+1000)
@@ -373,8 +378,12 @@ static void *worker_func(void *data)
 
                         /* Load our filename, for checking later on */
                         g_free(filename);
-                        //filename = g_strdup((gchar *) tuple_get_str(tuple, FIELD_FILE_NAME));
-                        filename = g_strconcat(tuple.get_str(Tuple::Path), tuple.get_str(Tuple::Basename));
+                        filename = g_strconcat(tuple.get_str(Tuple::Path).to_raw(),
+                                "/",
+                                tuple.get_str(Tuple::Basename).to_raw(),
+                                ".",
+                                tuple.get_str(Tuple::Suffix).to_raw(),
+                                NULL);
                     }
                 }
 
@@ -413,7 +422,12 @@ static void *worker_func(void *data)
                             {
                                 /* Get meta information */
                                 fprintf(stderr, "About to get tuple\n");
-                                tempfilefull = g_strconcat(tuple.get_str(Tuple::Path), tuple.get_str(Tuple::Basename));
+                                tempfilefull = g_strconcat(tuple.get_str(Tuple::Path).to_raw(),
+                                        "/",
+                                        tuple.get_str(Tuple::Basename).to_raw(),
+                                        ".",
+                                        tuple.get_str(Tuple::Suffix).to_raw(),
+                                        NULL);
                                 fprintf(stderr, "Got tuple\n");
                                 //fname = g_filename_from_uri(tempfilefull, NULL, NULL);
                                 //fprintf(stderr, "Got URI: %s\n", fname);
@@ -428,7 +442,10 @@ static void *worker_func(void *data)
                                 associate(formatter, 't', tuple.get_str(Tuple::Title).to_raw());
                                 associate(formatter, 'l', tuple.get_str(Tuple::Album).to_raw());
                                 // TODO: is FIELD_YEAR an int as well?
-                                associate(formatter, 'y', tuple.get_str(Tuple::Year).to_raw());
+                                temp = g_strdup_printf("%d", tuple.get_int(Tuple::Year));
+                                associate(formatter, 'y', (char *)temp);
+                                g_free(temp);
+                                //associate(formatter, 'y', tuple.get_str(Tuple::Year).to_raw());
                                 associate(formatter, 'g', tuple.get_str(Tuple::Genre).to_raw());
                                 temp = g_strdup_printf("%d", tuple.get_int(Tuple::Track));
                                 associate(formatter, 'n', (char *)temp);

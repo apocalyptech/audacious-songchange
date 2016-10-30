@@ -421,31 +421,25 @@ static void *worker_func(void *data)
                             if (cmd_line && strlen(cmd_line) > 0)
                             {
                                 /* Get meta information */
-                                fprintf(stderr, "About to get tuple\n");
                                 tempfilefull = g_strconcat(tuple.get_str(Tuple::Path).to_raw(),
                                         "/",
                                         tuple.get_str(Tuple::Basename).to_raw(),
                                         ".",
                                         tuple.get_str(Tuple::Suffix).to_raw(),
                                         NULL);
-                                fprintf(stderr, "Got tuple\n");
-                                //fname = g_filename_from_uri(tempfilefull, NULL, NULL);
-                                //fprintf(stderr, "Got URI: %s\n", fname);
                                 fprintf(stderr, "Got path: %s\n", tempfilefull);
-                                g_free(tempfilefull);
-                                fprintf(stderr, "Freed\n");
 
                                 /* Get our commandline */
                                 formatter = formatter_new();
 
+                                associate(formatter, 'f', tempfilefull);
+                                g_free(tempfilefull);
                                 associate(formatter, 'a', tuple.get_str(Tuple::Artist).to_raw());
                                 associate(formatter, 't', tuple.get_str(Tuple::Title).to_raw());
                                 associate(formatter, 'l', tuple.get_str(Tuple::Album).to_raw());
-                                // TODO: is FIELD_YEAR an int as well?
                                 temp = g_strdup_printf("%d", tuple.get_int(Tuple::Year));
                                 associate(formatter, 'y', (char *)temp);
                                 g_free(temp);
-                                //associate(formatter, 'y', tuple.get_str(Tuple::Year).to_raw());
                                 associate(formatter, 'g', tuple.get_str(Tuple::Genre).to_raw());
                                 temp = g_strdup_printf("%d", tuple.get_int(Tuple::Track));
                                 associate(formatter, 'n', (char *)temp);

@@ -30,7 +30,34 @@ Arch Linux as of 2016.08.01.
    WARNING   
 **************
 
+The actual GUI configuration bit was disabled long ago 'cause I didn't feel
+like keeping up with GTK+ changes.  To configure, make sure Audacious is
+shut down and edit ~/.config/audacious/config and edit/add the following
+stanza:
+
+    [xmms_tracking]
+    cmd_line=/home/user/bin/foo.pl -a "%a" -t "%t" -n "%n" -s "%s" -l "%l"
+    minimum_len=0
+    percent_done=45
+    seconds_past=240
+
+Percent strings available for formatting:
+
+    %f - Full path to the file
+    %a - Artist
+    %t - Title
+    %l - Album Name
+    %y - Year
+    %g - Genre
+    %n - Track Number
+    %s - Track length (in seconds)
+
+Make sure to use double-quotes around any percent string - the plugin will
+make sure that any quotes in the relevant tags are escaped properly.
+
 TODO:
- * Make sure we don't have memory leaks and the like
+ * Reintroduce configuration UI
+ * Fix memory leaks, etc
  * Make sure we don't try to get tag information for remote URLs
- * Make config changes apply automatically
+ * Should actually make it so quoting percent strings isn't required.
+   Should just put 'em in automatically, probably.

@@ -256,7 +256,7 @@ static void *worker_func(void *data)
     gboolean glitched = 0;
     gint playlist;
     Tuple tuple;
-    Playlist::GetMode playlist_nothing = Playlist::Nothing;
+    Playlist::GetMode playlist_nothing = Playlist::NoWait;
 
     while (run)
     {
@@ -272,7 +272,7 @@ static void *worker_func(void *data)
             // TODO: probably returns an empty Tuple() now, rather than NULL, if the
             // entry can't be ascertained
             tuple = aud_playlist_entry_get_tuple(playlist, pos, playlist_nothing);
-            if (tuple)
+            if (tuple.valid())
             {
                 len = tuple.get_int(Tuple::Length);
                 // TODO: Calling aud_drct_get_time() when aud_drct_get_ready() returns FALSE

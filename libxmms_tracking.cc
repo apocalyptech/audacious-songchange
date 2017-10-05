@@ -198,7 +198,7 @@ static char *escape_shell_chars(char *string)
     return wtfescape(escaped);
 }
 
-static void associate(Formatter *formatter, char letter, char *data)
+static void associate(Formatter *formatter, char letter, const char *data)
 {
     char *tmp;
     if (data == NULL)
@@ -207,7 +207,7 @@ static void associate(Formatter *formatter, char letter, char *data)
     }
     else
     {
-        tmp = escape_shell_chars(data);
+        tmp = escape_shell_chars((char *)data);
         formatter_associate(formatter, letter, tmp);
         g_free(tmp);
     }
@@ -254,7 +254,7 @@ static void *worker_func(void *data)
     int checkskip = 0;
     int glitchcount = 0;
     gboolean glitched = 0;
-    gint playlist;
+    //Playlist playlist;
     Tuple tuple;
     Playlist::GetMode playlist_nothing = Playlist::NoWait;
 
@@ -267,11 +267,11 @@ static void *worker_func(void *data)
         if (playing)
         {
             /* NOW grab this info */
-            playlist = aud_playlist_get_active();
-            pos = aud_playlist_get_position(playlist);
+            //playlist = playing_playlist();
+            pos = aud_drct_get_position();
             // TODO: probably returns an empty Tuple() now, rather than NULL, if the
             // entry can't be ascertained
-            tuple = aud_playlist_entry_get_tuple(playlist, pos, playlist_nothing);
+            tuple = aud_drct_get_tuple();
             if (tuple.valid())
             {
                 len = tuple.get_int(Tuple::Length);
@@ -310,11 +310,11 @@ static void *worker_func(void *data)
                     /* Also check for a glitch */
                     if (otime > 1000)
                     {
-                        filenamecomp = g_strconcat(tuple.get_str(Tuple::Path).to_raw(),
+                        filenamecomp = g_strconcat((const char *)tuple.get_str(Tuple::Path),
                                 "/",
-                                tuple.get_str(Tuple::Basename).to_raw(),
+                                (const char *)tuple.get_str(Tuple::Basename),
                                 ".",
-                                tuple.get_str(Tuple::Suffix).to_raw(),
+                                (const char *)tuple.get_str(Tuple::Suffix),
                                 NULL);
                         if (filename && filenamecomp && strcmp(filename, filenamecomp) == 0)
                         {
@@ -378,11 +378,11 @@ static void *worker_func(void *data)
 
                         /* Load our filename, for checking later on */
                         g_free(filename);
-                        filename = g_strconcat(tuple.get_str(Tuple::Path).to_raw(),
+                        filename = g_strconcat((const char *)tuple.get_str(Tuple::Path),
                                 "/",
-                                tuple.get_str(Tuple::Basename).to_raw(),
+                                (const char *)tuple.get_str(Tuple::Basename),
                                 ".",
-                                tuple.get_str(Tuple::Suffix).to_raw(),
+                                (const char *)tuple.get_str(Tuple::Suffix),
                                 NULL);
                     }
                 }
@@ -421,11 +421,11 @@ static void *worker_func(void *data)
                             if (cmd_line && strlen(cmd_line) > 0)
                             {
                                 /* Get meta information */
-                                tempfilefull = g_strconcat(tuple.get_str(Tuple::Path).to_raw(),
+                                tempfilefull = g_strconcat((const char *)tuple.get_str(Tuple::Path),
                                         "/",
-                                        tuple.get_str(Tuple::Basename).to_raw(),
+                                        (const char *)tuple.get_str(Tuple::Basename),
                                         ".",
-                                        tuple.get_str(Tuple::Suffix).to_raw(),
+                                        (const char *)tuple.get_str(Tuple::Suffix),
                                         NULL);
                                 fprintf(stderr, "Got path: %s\n", tempfilefull);
 
@@ -434,13 +434,13 @@ static void *worker_func(void *data)
 
                                 associate(formatter, 'f', tempfilefull);
                                 g_free(tempfilefull);
-                                associate(formatter, 'a', tuple.get_str(Tuple::Artist).to_raw());
-                                associate(formatter, 't', tuple.get_str(Tuple::Title).to_raw());
-                                associate(formatter, 'l', tuple.get_str(Tuple::Album).to_raw());
+                                associate(formatter, 'a', (const char *)tuple.get_str(Tuple::Artist));
+                                associate(formatter, 't', (const char *)tuple.get_str(Tuple::Title));
+                                associate(formatter, 'l', (const char *)tuple.get_str(Tuple::Album));
                                 temp = g_strdup_printf("%d", tuple.get_int(Tuple::Year));
                                 associate(formatter, 'y', (char *)temp);
                                 g_free(temp);
-                                associate(formatter, 'g', tuple.get_str(Tuple::Genre).to_raw());
+                                associate(formatter, 'g', (const char *)tuple.get_str(Tuple::Genre));
                                 temp = g_strdup_printf("%d", tuple.get_int(Tuple::Track));
                                 associate(formatter, 'n', (char *)temp);
                                 g_free(temp);
@@ -638,7 +638,7 @@ static void read_config(void)
     percent_done = aud_get_int(CFGCAT, "percent_done");
     seconds_past = aud_get_int(CFGCAT, "seconds_past");
     minimum_len = aud_get_int(CFGCAT, "minimum_len");
-    cmd_line = aud_get_str(CFGCAT, "cmd_line").to_raw();
+    cmd_line = g_strdup((const char *)aud_get_str(CFGCAT, "cmd_line"));
 
     if (percent_done == -1)
     {
